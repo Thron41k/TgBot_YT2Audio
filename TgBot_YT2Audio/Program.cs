@@ -1,7 +1,7 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Text.RegularExpressions;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using TgBot_YT2Audio;
+using VideoLibrary;
 using File = System.IO.File;
 
 
@@ -17,6 +17,20 @@ if (string.IsNullOrEmpty(token))
     Console.WriteLine("}");
     return;
 }
+
+var source = @"/root/";
+var youtube = YouTube.Default;
+var vid = youtube.GetVideo("https://youtu.be/adRoizGP6vw?si=fawaFoSSjQ05FIKu");
+File.WriteAllBytes(source + vid.FullName, vid.GetBytes());
+//var inputFile = new MediaFile { Filename = source + vid.FullName };
+//var outputFile = new MediaFile { Filename = $"{source + vid.FullName}.mp3" };
+
+//using (var engine = new Engine())
+//{
+//    engine.GetMetadata(inputFile);
+
+//    engine.Convert(inputFile, outputFile);
+//}
 using var cts = new CancellationTokenSource();
 var bot = new TelegramBotClient(token, cancellationToken: cts.Token);
 var user = await bot.GetMeAsync();
@@ -45,5 +59,11 @@ string? TokenFileLoad()
         return TokenFileReader.Read(args[0]);
     }
     return File.Exists("token.json") ? TokenFileReader.Read("token.json") : null;
+}
+
+bool YouTubeUrlValidate(string url)
+{
+    var pattern = @"^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$";
+    return Regex.IsMatch(url, pattern);
 }
 

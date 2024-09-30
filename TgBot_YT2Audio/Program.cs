@@ -3,7 +3,7 @@ using Telegram.Bot.Types;
 using TgBot_YT2Audio;
 
 
-
+Console.WriteLine(args[0]);
 using var cts = new CancellationTokenSource();
 var token = (await JsonFileReader.ReadAsync<JsonFileReader.TokenFile>("token.json"))?.Token;
 if (token != null)

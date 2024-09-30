@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Reference Include="Telegram.Bot">
+      <HintPath>..\..\Thron41k\TgBot_YT2Audio\TgBot_YT2Audio\Telegram.Bot.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Telegram.Bot.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -1,7 +1,11 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Net.Mime;
+using System.Text.RegularExpressions;
 using Telegram.Bot;
+using Telegram.Bot.Types;
+using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio;
-using VideoLibrary;
+using TgBot_YT2Audio.DownloadTask;
 using File = System.IO.File;
 
 
@@ -18,33 +22,35 @@ if (string.IsNullOrEmpty(token))
     return;
 }
 
-var source = @"/root/";
-var youtube = YouTube.Default;
-var vid = youtube.GetVideo("https://youtu.be/adRoizGP6vw?si=fawaFoSSjQ05FIKu");
-File.WriteAllBytes(source + vid.FullName, vid.GetBytes());
-//var inputFile = new MediaFile { Filename = source + vid.FullName };
-//var outputFile = new MediaFile { Filename = $"{source + vid.FullName}.mp3" };
-
-//using (var engine = new Engine())
-//{
-//    engine.GetMetadata(inputFile);
-
-//    engine.Convert(inputFile, outputFile);
-//}
 using var cts = new CancellationTokenSource();
 var bot = new TelegramBotClient(token, cancellationToken: cts.Token);
 var user = await bot.GetMeAsync();
+var taskManager = new TaskManager();
 bot.OnMessage += async (message, type) =>
 {
     try
     {
+        if (type != UpdateType.Message) return;
         if (message.Text is null) return;
-        Console.WriteLine($"Received {type} '{message.Text}' in {message.Chat}");
-        await bot.SendTextMessageAsync(message.Chat, $"{message.From} said: {message.Text}");
+        if (YouTubeUrlValidate(message.Text))
+        {
+            var mes = await bot.SendTextMessageAsync(message.Chat, "Что вы хотите скачать?",
+                replyMarkup: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио"));
+            taskManager.AddTask(message.Text, mes, bot);
+        }
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex.Message);
+    }
+};
+bot.OnUpdate += async update =>
+{
+    if (update is { CallbackQuery: { } query }) // non-null CallbackQuery
+    {
+        await bot.DeleteMessageAsync(query.Message!.Chat, query.Message.MessageId);
+        await bot.AnswerCallbackQueryAsync(query.Id, $"You picked {query.Data}");
+        await bot.SendTextMessageAsync(query.Message!.Chat, $"User {query.From} clicked on {query.Data}");
     }
 };
 Console.WriteLine($"@{user.Username} запущен... Нажмите любую клавишу для выхода.");

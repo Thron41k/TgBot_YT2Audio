@@ -36,7 +36,7 @@ bot.OnMessage += async (message, type) =>
         {
             var mes = await bot.SendTextMessageAsync(message.Chat, "Что вы хотите скачать?",
                 replyMarkup: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио"));
-            taskManager.AddTask(message.Text, mes, bot);
+            taskManager.AddTask(message.Text, message.From!.Id, mes, bot);
         }
     }
     catch (Exception ex)
@@ -48,9 +48,14 @@ bot.OnUpdate += async update =>
 {
     if (update is { CallbackQuery: { } query }) // non-null CallbackQuery
     {
-        await bot.DeleteMessageAsync(query.Message!.Chat, query.Message.MessageId);
-        await bot.AnswerCallbackQueryAsync(query.Id, $"You picked {query.Data}");
-        await bot.SendTextMessageAsync(query.Message!.Chat, $"User {query.From} clicked on {query.Data}");
+        await bot.AnswerCallbackQueryAsync(query.Id);
+        if (!taskManager.UpdateTask(query))
+        {
+            await bot.EditMessageTextAsync(query.Message!.Chat, query.Message!.MessageId, "Что то пошло не так( попробуйте ещё раз.");
+        }
+        //await bot.DeleteMessageAsync(query.Message!.Chat, query.Message.MessageId);
+        //await bot.AnswerCallbackQueryAsync(query.Id, $"You picked {query.Data}");
+        //await bot.SendTextMessageAsync(query.Message!.Chat, $"User {query.From} clicked on {query.Data}");
     }
 };
 Console.WriteLine($"@{user.Username} запущен... Нажмите любую клавишу для выхода.");

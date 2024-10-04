@@ -1,38 +1,44 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using YoutubeDLSharp;
+using YoutubeDLSharp.Metadata;
 
 namespace TgBot_YT2Audio.DownloadTask;
-public class DownloadTask(string url, Message message, TelegramBotClient bot)
+public class DownloadTask(string url, long id, Message message, TelegramBotClient bot)
 {
     private readonly string? _url = url;
     private Message _message = message;
-    private readonly TelegramBotClient _bot = bot;
     private TaskStates _taskState = TaskStates.Created;
     private TaskTypes _taskType = TaskTypes.None;
+    private readonly YoutubeDL _ytdl = new()
+    {
+        YoutubeDLPath = "yt-dlp\\yt-dlp.exe"
+    };
 
     public bool Check(int messageId, long userId)
     {
-        return _message.From != null && _message.MessageId == messageId && _message.From.Id == userId;
+        return _message.MessageId == messageId && id == userId;
     }
 
-    public void Update(CallbackQuery query)
+    public async Task Update(CallbackQuery query)
     {
         switch (_taskState)
         {
             case TaskStates.Created:
-                TaskTypeChooseComplete(query.Data);
+                await TaskTypeChooseComplete(query.Data);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
         }
     }
 
-    private  void TaskTypeChooseComplete(string? mes)
+    private async Task TaskTypeChooseComplete(string? mes)
     {
         switch (mes)
         {
@@ -48,7 +54,28 @@ public class DownloadTask(string url, Message message, TelegramBotClient bot)
 
         if (_taskState == TaskStates.TypeSelected)
         {
-            _bot.Ed
+            switch (_taskType)
+            {
+                case TaskTypes.None:
+                    break;
+                case TaskTypes.Video:
+                    try
+                    {
+                        var res = await _ytdl.RunVideoDataFetch(_url);
+                        var video = res.Data;
+                        Console.WriteLine(video.Format);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                    break;
+                case TaskTypes.Audio:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+            await bot.EditMessageTextAsync(_message.Chat.Id, _message.MessageId, "Загрузка началась...");
         }
     }
 }

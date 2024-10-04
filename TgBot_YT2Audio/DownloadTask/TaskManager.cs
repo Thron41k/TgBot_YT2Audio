@@ -11,16 +11,16 @@ namespace TgBot_YT2Audio.DownloadTask
     public class TaskManager
     {
         private readonly List<DownloadTask> _tasks = [];
-
-        public void AddTask(string url, Message message, TelegramBotClient bot)
-        {
-            _tasks.Add(new DownloadTask(url,message, bot));
-        }
-
-        public void UpdateTask(CallbackQuery query)
+        public bool UpdateTask(CallbackQuery query)
         {
             var task = _tasks.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null);
-            task?.Update(query);
+            if (task == null) return false;
+            task.Update(query);
+            return true;
+        }
+        public void AddTask(string url, long fromId, Message mesMessageId, TelegramBotClient bot)
+        {
+            _tasks.Add(new DownloadTask(url, fromId, mesMessageId, bot));
         }
     }
 }

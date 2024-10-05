@@ -62,8 +62,13 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                     try
                     {
                         var res = await _ytdl.RunVideoDataFetch(_url);
+                        var formats = new List<FormatData>();
+                        foreach (var format in Helpers.Formats)
+                        {
+                            formats.AddRange(res.Data.Formats.Where(x=>x.FormatNote == format).ToList());
+                        }
                         var video = res.Data;
-                        Console.WriteLine(video.Format);
+                        Console.WriteLine(formats.Count);
                     }
                     catch (Exception e)
                     {

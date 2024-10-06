@@ -16,11 +16,13 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
     private Message _message = message;
     private TaskStates _taskState = TaskStates.Created;
     private TaskTypes _taskType = TaskTypes.None;
-    private readonly YoutubeDL _ytdl = new()
+    private List<FormatData> _formats = new List<FormatData>();
+    private bool _fail = false;
+    private readonly YoutubeDL _ytdl = new(10)
     {
         YoutubeDLPath = "yt-dlp\\yt-dlp.exe"
     };
-
+    public bool Fail => _fail;
     public bool Check(int messageId, long userId)
     {
         return _message.MessageId == messageId && id == userId;
@@ -56,18 +58,11 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
         {
             switch (_taskType)
             {
-                case TaskTypes.None:
-                    break;
                 case TaskTypes.Video:
                     try
                     {
                         var res = await _ytdl.RunVideoDataFetch(_url);
-                        var formats = new List<FormatData>();
-                        foreach (var format in Helpers.Formats)
-                        {
-                            formats.AddRange(res.Data.Formats.Where(x=>x.FormatNote == format).ToList());
-                        }
-                        var video = res.Data;
+                        _formats = Helpers.GetFormatList(res.Data.Formats).FormatList;
                         Console.WriteLine(formats.Count);
                     }
                     catch (Exception e)
@@ -77,10 +72,13 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                     break;
                 case TaskTypes.Audio:
                     break;
+                case TaskTypes.None:
                 default:
-                    throw new ArgumentOutOfRangeException();
+                    _fail = true;
+                    await bot.EditMessageTextAsync(_message.Chat.Id, _message.MessageId, "Что то пошло не так( попробуйте ещё раз.");
+                    break;
             }
-            await bot.EditMessageTextAsync(_message.Chat.Id, _message.MessageId, "Загрузка началась...");
+            
         }
     }
 }

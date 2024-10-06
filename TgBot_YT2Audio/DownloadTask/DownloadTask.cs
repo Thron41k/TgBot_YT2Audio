@@ -6,14 +6,13 @@ using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using YoutubeDLSharp;
 using YoutubeDLSharp.Metadata;
 
 namespace TgBot_YT2Audio.DownloadTask;
 public class DownloadTask(string url, long id, Message message, TelegramBotClient bot)
 {
-    private readonly string? _url = url;
-    private Message _message = message;
     private TaskStates _taskState = TaskStates.Created;
     private TaskTypes _taskType = TaskTypes.None;
     private List<FormatData> _formats = new List<FormatData>();
@@ -25,7 +24,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
     public bool Fail => _fail;
     public bool Check(int messageId, long userId)
     {
-        return _message.MessageId == messageId && id == userId;
+        return message.MessageId == messageId && id == userId;
     }
 
     public async Task Update(CallbackQuery query)
@@ -40,6 +39,20 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
         }
     }
 
+    private InlineKeyboardMarkup GetKeyboard(IEnumerable<string> buttons)
+    {
+        var keyboard = new InlineKeyboardMarkup();
+        var enumerable = buttons as string[] ?? buttons.ToArray();
+        for (var i = 0; i < enumerable.Count(); i++)
+        {
+            if (i % 2 == 0 && i != 0)
+            {
+                keyboard.AddNewRow();
+            }
+            keyboard.AddButton(enumerable[i], callbackData: enumerable[i]);
+        }
+        return keyboard;
+    }
     private async Task TaskTypeChooseComplete(string? mes)
     {
         switch (mes)
@@ -61,9 +74,11 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                 case TaskTypes.Video:
                     try
                     {
-                        var res = await _ytdl.RunVideoDataFetch(_url);
-                        _formats = Helpers.GetFormatList(res.Data.Formats).FormatList;
-                        Console.WriteLine(formats.Count);
+                        var res = await _ytdl.RunVideoDataFetch(url);
+                        var result = Helpers.GetFormatList(res.Data.Formats);
+                        _formats = result.FormatList;
+                        await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Выберите качество",
+                            replyMarkup: GetKeyboard(result.FormatNames));
                     }
                     catch (Exception e)
                     {
@@ -75,7 +90,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                 case TaskTypes.None:
                 default:
                     _fail = true;
-                    await bot.EditMessageTextAsync(_message.Chat.Id, _message.MessageId, "Что то пошло не так( попробуйте ещё раз.");
+                    await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Что то пошло не так( попробуйте ещё раз.");
                     break;
             }
             

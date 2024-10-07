@@ -9,6 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Apis.Discovery.v1" Version="1.68.0" />
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.68.0.3544" />
     <PackageReference Include="YoutubeDLSharp" Version="1.1.1" />
   </ItemGroup>
 

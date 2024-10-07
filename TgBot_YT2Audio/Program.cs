@@ -6,11 +6,12 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio;
 using TgBot_YT2Audio.DownloadTask;
+using TgBot_YT2Audio.DownloadTask.GDrive;
 using File = System.IO.File;
 
 
-var token = TokenFileLoad();
-if (string.IsNullOrEmpty(token))
+var tokenData = TokenFileLoad();
+if (string.IsNullOrEmpty(tokenData?.TgToken))
 {
     Console.WriteLine("Не обнаружен токен для авторизации бота.");
     Console.WriteLine("Создайте в корне файл \"token.json\" с токеном или передайте в качестве первого аргумента путь к файлу с токеном.");
@@ -21,9 +22,10 @@ if (string.IsNullOrEmpty(token))
     Console.WriteLine("}");
     return;
 }
-
+var upf = new UploadFile();
+upf.Init();
 using var cts = new CancellationTokenSource();
-var bot = new TelegramBotClient(token, cancellationToken: cts.Token);
+var bot = new TelegramBotClient(tokenData.TgToken, cancellationToken: cts.Token);
 var user = await bot.GetMeAsync();
 var taskManager = new TaskManager();
 bot.OnMessage += async (message, type) =>
@@ -63,7 +65,7 @@ Console.ReadLine();
 cts.Cancel();
 return;
 
-string? TokenFileLoad()
+TokenFileReader.TokenFile? TokenFileLoad()
 {
     if (args.Length > 0 && File.Exists(args[0]))
     {
@@ -74,7 +76,6 @@ string? TokenFileLoad()
 
 bool YouTubeUrlValidate(string url)
 {
-    var pattern = @"^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$";
+    const string pattern = @"^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$";
     return Regex.IsMatch(url, pattern);
 }
-

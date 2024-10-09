@@ -6,10 +6,10 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio;
 using TgBot_YT2Audio.DownloadTask;
-using TgBot_YT2Audio.DownloadTask.GDrive;
 using File = System.IO.File;
 
 
+var rooDir = "D:\\TGBotRoot";
 var tokenData = TokenFileLoad();
 if (string.IsNullOrEmpty(tokenData?.TgToken))
 {
@@ -18,14 +18,18 @@ if (string.IsNullOrEmpty(tokenData?.TgToken))
     Console.WriteLine("Файл \"token.json\" должен иметь следующую структуру:");
     Console.WriteLine(Environment.NewLine);
     Console.WriteLine("{");
-    Console.WriteLine("\t\"Token\": \"ВАШ_ТОКЕН\"");
+    Console.WriteLine("\t\"TgToken\": \"ТОКЕНА_ВАШЕГО_ТЕЛЕГРАМ_БОТА\"");
+    Console.WriteLine("\t\"GoogleApiClientId\": \"Google Api Client ID\"");
+    Console.WriteLine("\t\"GoogleApiClientSecret\": \"Google Api Client Secret\"");
     Console.WriteLine("}");
     return;
 }
-var upf = new UploadFile();
-upf.Init();
+
 using var cts = new CancellationTokenSource();
-var bot = new TelegramBotClient(tokenData.TgToken, cancellationToken: cts.Token);
+var opt = new TelegramBotClientOptions(tokenData.TgToken,baseUrl: "http://localhost:8081");
+var bot = new TelegramBotClient(cancellationToken: cts.Token,options: opt);
+Console.WriteLine($"local server {bot.LocalBotServer}");
+bot.Timeout = new TimeSpan(0,1,0,0);
 var user = await bot.GetMeAsync();
 var taskManager = new TaskManager();
 bot.OnMessage += async (message, type) =>

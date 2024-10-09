@@ -15,11 +15,13 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
     private List<FormatData> _formats = new();
     private string? _quality = "";
     private bool _progressQuoted;
+    private string _discription = "";
+    private string _id = "";
 
     private readonly YoutubeDL _ytdl = new(10)
     {
         YoutubeDLPath = "yt-dlp\\yt-dlp.exe",
-        OutputFolder = "output_tmp",
+        OutputFolder = @"D:\TGBotRoot\",
     };
     public bool Fail { get; private set; } = false;
 
@@ -67,22 +69,25 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
         {
             if (mes != null)
             {
-                await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
+                await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю скачивание...");
                 _taskState = TaskStates.Downloading;
                 var format = _formats.Where(x => x.Extension == mes).MaxBy(x => x.Bitrate);
                 if (format != null)
                 {
                     var progress = new Progress<DownloadProgress>(ChangeDownloadProgress);
+                    var opt = new OptionSet
+                    {
+                        Format = format.FormatId,
+                        Output = $"{_ytdl.OutputFolder}\\video_%(id)s_%(format_note)s.%(ext)s"
+                    };
                     var res = await _ytdl.RunVideoDownload(
                         url, progress: progress,
-                        overrideOptions: new OptionSet()
-                        {
-                            Format = format.FormatId,
-                        }
+                        overrideOptions: opt
                     );
-                    await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                    await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
                     await using Stream stream = System.IO.File.OpenRead(res.Data);
-                    await bot.SendVideoAsync(message.Chat.Id, stream, supportsStreaming: true);
+                    await bot.SendVideoAsync(message.Chat.Id, stream, caption: _discription, supportsStreaming: true);
+                    await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
                     return;
                 }
             }
@@ -110,7 +115,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                 if (_progressQuoted) return;
                 _progressQuoted = true;
                 await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId,
-                    $"Загружено {Math.Round(p.Progress * result / 1f, 2)}МБ из {result}МБ. {totalPercent}%");
+                    $"Скачано {Math.Round(p.Progress * result / 1f, 2)}МБ из {result}МБ. {totalPercent}%");
             }
             else
             {
@@ -158,6 +163,8 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                     var res = await _ytdl.RunVideoDataFetch(url);
                     var result = Helpers.GetFormatList(res.Data.Formats);
                     _formats = result.FormatList;
+                    _discription = res.Data.Title;
+                    _id = res.Data.ID;
                     await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Выберите качество",
                         replyMarkup: GetKeyboard(result.FormatNames));
                     return;

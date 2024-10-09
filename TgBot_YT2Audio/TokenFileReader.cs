@@ -23,6 +23,5 @@ public static class TokenFileReader
     public class TokenFile
     {
         public string? TgToken { get; set; }
-        public string? GDriveToken { get; set; }
     }
 }

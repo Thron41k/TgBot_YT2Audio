@@ -9,7 +9,7 @@ namespace TgBot_YT2Audio.DownloadTask
 {
     public static class Helpers
     {
-        public static string[] Formats = ["240p", "360p", "480p", "720p", "1080p"];
+        private static readonly string[] Formats = ["240p", "360p", "480p", "720p", "1080p", "720p60", "1080p60"];
         public static (List<FormatData> FormatList, List<string> FormatNames) GetFormatList(IEnumerable<FormatData> formats)
         {
             var formatList = new List<FormatData>();

@@ -204,7 +204,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                 case "Аудио":
                     _taskType = TaskTypes.Audio;
                     _taskState = TaskStates.FormatSelected;
-                    await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Собираю информацию о видео...");
+                    await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Собираю информацию о аудио...");
                     var resA = await _ytDl.RunVideoDataFetch(url);
                     _title = resA.Data.Title;
                     await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Выберите формат",

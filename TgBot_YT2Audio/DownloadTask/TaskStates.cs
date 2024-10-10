@@ -1,5 +1,4 @@
-﻿using System;
-namespace TgBot_YT2Audio.DownloadTask;
+﻿namespace TgBot_YT2Audio.DownloadTask;
 public enum TaskStates
 {
     Created = 0,

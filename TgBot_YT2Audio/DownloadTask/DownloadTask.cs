@@ -134,9 +134,9 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
         {
             if (string.IsNullOrEmpty(p.TotalDownloadSize)) return;
             var pattern = new Regex("[0-9]*[.]?[0-9]+");
-            Console.WriteLine(p.TotalDownloadSize);
             var match = pattern.Match(p.TotalDownloadSize);
             var tryResult = float.TryParse(match.Value.Replace('.', ','), out var result);
+            Console.WriteLine(result);
             if (!tryResult) return;
             var totalPercent = (float)Math.Round(100f * p.Progress / 1f, 2);
             if ((int)totalPercent % 10 <= 3)

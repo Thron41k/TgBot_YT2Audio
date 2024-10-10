@@ -6,6 +6,7 @@ using TgBot_YT2Audio.DownloadTask;
 
 
 using var cts = new CancellationTokenSource();
+await YoutubeDLSharp.Utils.DownloadYtDlp(Configuration.GetInstance().YoutubeDlPath);
 var bot = new TelegramBotClient(cancellationToken: cts.Token,options: new TelegramBotClientOptions(Configuration.GetInstance().BotApiToken!, baseUrl: Configuration.GetInstance().LocalApiServer));
 Console.WriteLine($"Local server {bot.LocalBotServer}");
 bot.Timeout = new TimeSpan(0,1,0,0);

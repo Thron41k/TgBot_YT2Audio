@@ -1,4 +1,5 @@
 ﻿using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio;
@@ -19,7 +20,11 @@ bot.OnMessage += async (message, type) =>
         if (message.Text is null) return;
         if (Helpers.YouTubeUrlValidate(message.Text))
         {
-            var mes = await bot.SendTextMessageAsync(message.Chat, "Что вы хотите скачать?", replyMarkup: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио"));
+            Message mes;
+            if(!Helpers.IsMusic(message.Text))
+                mes = await bot.SendTextMessageAsync(message.Chat, "Что вы хотите скачать?", replyMarkup: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио"));
+            else
+                mes = await bot.SendTextMessageAsync(message.Chat, "Готовлюсь к скачиванию аудио...");
             taskManager.AddTask(message.Text, message.From!.Id, mes, bot);
         }
     }

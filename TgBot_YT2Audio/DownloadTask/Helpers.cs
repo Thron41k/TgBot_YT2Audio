@@ -34,5 +34,10 @@ namespace TgBot_YT2Audio.DownloadTask
             const string pattern = @"^((?:https?:)?\/\/)?((?:www|m|music)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$";
             return Regex.IsMatch(url, pattern);
         }
+
+        public static bool IsMusic(string url)
+        {
+            return url.IndexOf("music", StringComparison.Ordinal) != -1;
+        }
     }
 }

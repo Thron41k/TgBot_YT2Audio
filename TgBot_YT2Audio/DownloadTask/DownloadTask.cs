@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Globalization;
+using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -135,7 +136,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
             if (string.IsNullOrEmpty(p.TotalDownloadSize)) return;
             var pattern = new Regex("[0-9]*[.]?[0-9]+");
             var match = pattern.Match(p.TotalDownloadSize);
-            var tryResult = float.TryParse(match.Value, out var result);
+            var tryResult = float.TryParse(match.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture,out var result);
             Console.WriteLine(result);
             if (!tryResult) return;
             var totalPercent = (float)Math.Round(100f * p.Progress / 1f, 2);

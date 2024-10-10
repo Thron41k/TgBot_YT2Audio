@@ -1,4 +1,5 @@
-﻿using Telegram.Bot;
+﻿using System.Threading.Tasks;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 
 namespace TgBot_YT2Audio.DownloadTask
@@ -13,12 +14,16 @@ namespace TgBot_YT2Audio.DownloadTask
             var task = _tasks.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null);
             if (task == null) return false;
             _ = task.Update(query);
+            
             return true;
         }
 
-        public void AddTask(string url, long fromId, Message mesMessageId, TelegramBotClient bot)
+        public void AddTask(string url, long fromId, Message mesMessageId, TelegramBotClient bot, bool force = false)
         {
-            _tasks.Add(new DownloadTask(url, fromId, mesMessageId, bot));
+            var dt = new DownloadTask(url, fromId, mesMessageId, bot);
+            if (force) _ = dt.Force();
+            _tasks.Add(dt);
+            
         }
     }
 }

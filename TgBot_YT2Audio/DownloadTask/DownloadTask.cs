@@ -219,4 +219,9 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
         Fail = true;
         await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Что то пошло не так( попробуйте ещё раз.");
     }
+
+    public async Task Force()
+    {
+        await TaskTypeChooseComplete("Аудио");
+    }
 }

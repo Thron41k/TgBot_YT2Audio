@@ -18,7 +18,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
 
     private readonly YoutubeDL _ytdl = new(10)
     {
-        YoutubeDLPath = $"{Configuration.GetInstance().YoutubeDlPath}",
+        YoutubeDLPath = $"{Configuration.GetInstance().YoutubeDlPath}\\{Utils.YtDlpBinaryName}",
         OutputFolder = Configuration.GetInstance().OutputFolder,
     };
     public bool Fail { get; private set; }

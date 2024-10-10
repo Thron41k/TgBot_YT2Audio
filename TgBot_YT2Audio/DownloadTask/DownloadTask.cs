@@ -1,4 +1,5 @@
 ﻿using System.Globalization;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -6,6 +7,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using YoutubeDLSharp;
 using YoutubeDLSharp.Metadata;
 using YoutubeDLSharp.Options;
+using File = System.IO.File;
 
 namespace TgBot_YT2Audio.DownloadTask;
 public class DownloadTask(string url, long id, Message message, TelegramBotClient bot)
@@ -93,6 +95,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                                 await bot.SendVideoAsync(message.Chat.Id, streamV, caption: _title,
                                     supportsStreaming: true);
                                 await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                                File.Delete(resV.Data);
                             }
 
                             Fail = true;
@@ -112,6 +115,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                             await using Stream streamA = System.IO.File.OpenRead(resA.Data);
                             await bot.SendAudioAsync(message.Chat.Id, streamA, caption: _title);
                             await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                            File.Delete(resA.Data);
                             Fail = true;
                             break;
                         }

@@ -31,7 +31,7 @@ namespace TgBot_YT2Audio.DownloadTask
 
         public static bool YouTubeUrlValidate(string url)
         {
-            const string pattern = @"^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$";
+            const string pattern = @"^((?:https?:)?\/\/)?((?:www|m|music)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$";
             return Regex.IsMatch(url, pattern);
         }
     }

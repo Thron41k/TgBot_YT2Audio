@@ -17,7 +17,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
     private bool _progressQuoted;
     private string _title = "";
 
-    private readonly YoutubeDL _ytDl = new(10)
+    private readonly YoutubeDL _ytDl = new(30)
     {
         YoutubeDLPath = Configuration.GetInstance().YoutubeDlPath,
         OutputFolder = Configuration.GetInstance().OutputFolder,

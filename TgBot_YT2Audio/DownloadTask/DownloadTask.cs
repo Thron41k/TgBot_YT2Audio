@@ -142,8 +142,9 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
             {
                 if (_progressQuoted) return;
                 _progressQuoted = true;
+                var unit = p.TotalDownloadSize.Replace(match.Value, "");
                 await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId,
-                    $"Скачано {Math.Round(p.Progress * result / 1f, 2)}МБ из {result}МБ. {totalPercent}%");
+                    $"Скачано {Math.Round(p.Progress * result / 1f, 2)}{unit} из {result}{unit}. {totalPercent}%");
             }
             else
             {

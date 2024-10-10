@@ -18,7 +18,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
 
     private readonly YoutubeDL _ytdl = new(10)
     {
-        YoutubeDLPath = $"{Configuration.GetInstance().YoutubeDlPath}",
+        YoutubeDLPath = Configuration.GetInstance().YoutubeDlPath,
         OutputFolder = Configuration.GetInstance().OutputFolder,
     };
     public bool Fail { get; private set; }
@@ -80,7 +80,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                                 var optV = new OptionSet
                                 {
                                     Format = format.FormatId,
-                                    Output = $@"{_ytdl.OutputFolder}\video\video_%(id)s_%(format_note)s.%(ext)s"
+                                    Output = Path.Combine(_ytdl.OutputFolder, "video", "video_%(id)s_%(format_note)s.%(ext)s")
                                 };
                                 var resV = await _ytdl.RunVideoDownload(
                                     url, progress: progress,
@@ -101,7 +101,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                         {
                             var optA = new OptionSet
                             {
-                                Output = $@"{_ytdl.OutputFolder}\audio\audio_%(id)s_%(format_note)s.%(ext)s"
+                                Output = Path.Combine(_ytdl.OutputFolder, "audio", "audio_%(id)s_%(format_note)s.%(ext)s")
                             };
                             var resA = await _ytdl.RunAudioDownload(
                                 url, Helpers.GetAudioFormat(mes), progress: progress, overrideOptions: optA

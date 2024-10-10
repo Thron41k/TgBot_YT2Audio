@@ -112,7 +112,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                             );
                             await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
                             await using Stream streamA = File.OpenRead(resA.Data);
-                            await bot.SendAudioAsync(message.Chat.Id, streamA, caption: _title);
+                            await bot.SendAudioAsync(message.Chat.Id, streamA, caption: _title,title: _title);
                             await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
                             File.Delete(resA.Data);
                             Fail = true;

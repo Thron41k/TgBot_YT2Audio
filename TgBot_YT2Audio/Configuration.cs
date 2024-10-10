@@ -26,7 +26,6 @@ public class Configuration
         if(string.IsNullOrEmpty(OutputFolder)) return false;
         if (string.IsNullOrEmpty(YoutubeDlPath)) return false;
         if (string.IsNullOrEmpty(BotApiToken)) return false;
-        if (string.IsNullOrEmpty(LocalApiServer)) return false;
         return true;
     }
 
@@ -42,7 +41,11 @@ public class Configuration
     private void Save()
     {
         using var fs = new FileStream("config.json", FileMode.Create);
-        JsonSerializer.Serialize(fs, this);
+        var jsonOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+        };
+        JsonSerializer.Serialize(fs, this, jsonOptions);
     }
 
     private static Configuration Load()

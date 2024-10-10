@@ -1,5 +1,4 @@
-﻿using System.Security.Cryptography.X509Certificates;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -12,18 +11,17 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
 {
     private TaskStates _taskState = TaskStates.Created;
     private TaskTypes _taskType = TaskTypes.None;
-    private List<FormatData> _formats = new();
+    private List<FormatData> _formats = [];
     private string? _quality = "";
     private bool _progressQuoted;
     private string _discription = "";
-    private string _id = "";
 
     private readonly YoutubeDL _ytdl = new(10)
     {
-        YoutubeDLPath = "yt-dlp\\yt-dlp.exe",
-        OutputFolder = @"D:\TGBotRoot\",
+        YoutubeDLPath = Configuration.GetInstance().YoutubeDlPath,
+        OutputFolder = Configuration.GetInstance().OutputFolder,
     };
-    public bool Fail { get; private set; } = false;
+    public bool Fail { get; private set; }
 
     public bool Check(int messageId, long userId)
     {
@@ -71,25 +69,55 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
             {
                 await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю скачивание...");
                 _taskState = TaskStates.Downloading;
-                var format = _formats.Where(x => x.Extension == mes).MaxBy(x => x.Bitrate);
-                if (format != null)
+                var progress = new Progress<DownloadProgress>(ChangeDownloadProgress);
+                switch (_taskType)
                 {
-                    var progress = new Progress<DownloadProgress>(ChangeDownloadProgress);
-                    var opt = new OptionSet
-                    {
-                        Format = format.FormatId,
-                        Output = $"{_ytdl.OutputFolder}\\video_%(id)s_%(format_note)s.%(ext)s"
-                    };
-                    var res = await _ytdl.RunVideoDownload(
-                        url, progress: progress,
-                        overrideOptions: opt
-                    );
-                    await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
-                    await using Stream stream = System.IO.File.OpenRead(res.Data);
-                    await bot.SendVideoAsync(message.Chat.Id, stream, caption: _discription, supportsStreaming: true);
-                    await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
-                    return;
+                    case TaskTypes.Video:
+                        {
+                            var format = _formats.Where(x => x.Extension == mes).MaxBy(x => x.Bitrate);
+                            if (format != null)
+                            {
+                                var optV = new OptionSet
+                                {
+                                    Format = format.FormatId,
+                                    Output = $@"{_ytdl.OutputFolder}\video\video_%(id)s_%(format_note)s.%(ext)s"
+                                };
+                                var resV = await _ytdl.RunVideoDownload(
+                                    url, progress: progress,
+                                    overrideOptions: optV
+                                );
+                                await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
+                                await using Stream streamV = System.IO.File.OpenRead(resV.Data);
+                                await bot.SendVideoAsync(message.Chat.Id, streamV, caption: _discription,
+                                    supportsStreaming: true);
+                                await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                            }
+
+                            Fail = true;
+                            break;
+                        }
+
+                    case TaskTypes.Audio:
+                        {
+                            var optA = new OptionSet
+                            {
+                                Output = $@"{_ytdl.OutputFolder}\audio\audio_%(id)s_%(format_note)s.%(ext)s"
+                            };
+                            var resA = await _ytdl.RunAudioDownload(
+                                url, Helpers.GetAudioFormat(mes), progress: progress, overrideOptions: optA
+                            );
+                            await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
+                            await using Stream streamA = System.IO.File.OpenRead(resA.Data);
+                            await bot.SendAudioAsync(message.Chat.Id, streamA, caption: _discription);
+                            await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
+                            Fail = true;
+                            break;
+                        }
+                    default:
+                    case TaskTypes.None:
+                        throw new ArgumentOutOfRangeException();
                 }
+
             }
         }
         catch (Exception e)
@@ -160,17 +188,21 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                     _taskType = TaskTypes.Video;
                     _taskState = TaskStates.TypeSelected;
                     await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Собираю информацию о видео...");
-                    var res = await _ytdl.RunVideoDataFetch(url);
-                    var result = Helpers.GetFormatList(res.Data.Formats);
+                    var reVs = await _ytdl.RunVideoDataFetch(url);
+                    var result = Helpers.GetFormatList(reVs.Data.Formats.ToList());
                     _formats = result.FormatList;
-                    _discription = res.Data.Title;
-                    _id = res.Data.ID;
+                    _discription = reVs.Data.Title;
                     await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Выберите качество",
                         replyMarkup: GetKeyboard(result.FormatNames));
                     return;
                 case "Аудио":
                     _taskType = TaskTypes.Audio;
-                    _taskState = TaskStates.TypeSelected;
+                    _taskState = TaskStates.FormatSelected;
+                    await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Собираю информацию о видео...");
+                    var resA = await _ytdl.RunVideoDataFetch(url);
+                    _discription = resA.Data.Title;
+                    await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Выберите формат",
+                        replyMarkup: GetKeyboard(Helpers.AudioFormats));
                     return;
             }
         }

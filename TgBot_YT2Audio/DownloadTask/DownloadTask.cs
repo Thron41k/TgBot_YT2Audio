@@ -1,5 +1,4 @@
 ﻿using System.Globalization;
-using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
@@ -91,7 +90,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                                     overrideOptions: optV
                                 );
                                 await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
-                                await using Stream streamV = System.IO.File.OpenRead(resV.Data);
+                                await using Stream streamV = File.OpenRead(resV.Data);
                                 await bot.SendVideoAsync(message.Chat.Id, streamV, caption: _title,
                                     supportsStreaming: true);
                                 await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
@@ -112,7 +111,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                                 url, Helpers.GetAudioFormat(mes), progress: progress, overrideOptions: optA
                             );
                             await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
-                            await using Stream streamA = System.IO.File.OpenRead(resA.Data);
+                            await using Stream streamA = File.OpenRead(resA.Data);
                             await bot.SendAudioAsync(message.Chat.Id, streamA, caption: _title);
                             await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
                             File.Delete(resA.Data);

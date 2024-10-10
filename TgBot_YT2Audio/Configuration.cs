@@ -25,8 +25,7 @@ public class Configuration
     {
         if(string.IsNullOrEmpty(OutputFolder)) return false;
         if (string.IsNullOrEmpty(YoutubeDlPath)) return false;
-        if (string.IsNullOrEmpty(BotApiToken)) return false;
-        return true;
+        return !string.IsNullOrEmpty(BotApiToken);
     }
 
     private Configuration()

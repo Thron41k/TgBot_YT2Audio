@@ -6,6 +6,7 @@ namespace TgBot_YT2Audio.DownloadTask
     public class TaskManager
     {
         private readonly List<DownloadTask> _tasks = [];
+
         public bool UpdateTask(CallbackQuery query)
         {
             _tasks.RemoveAll(x => x.Fail);
@@ -14,6 +15,7 @@ namespace TgBot_YT2Audio.DownloadTask
             _ = task.Update(query);
             return true;
         }
+
         public void AddTask(string url, long fromId, Message mesMessageId, TelegramBotClient bot)
         {
             _tasks.Add(new DownloadTask(url, fromId, mesMessageId, bot));

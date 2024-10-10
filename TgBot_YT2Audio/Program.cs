@@ -8,6 +8,7 @@ using var cts = new CancellationTokenSource();
 var tgOptions = new TelegramBotClientOptions(Configuration.GetInstance().BotApiToken!, baseUrl: Configuration.GetInstance().LocalApiServer);
 var bot = new TelegramBotClient(cancellationToken: cts.Token, options: tgOptions);
 Console.WriteLine($"Local server {bot.LocalBotServer}");
+FileCleaner.GetInstance().Start();
 bot.Timeout = new TimeSpan(0, 1, 0, 0);
 var user = await bot.GetMeAsync();
 var taskManager = new TaskManager();

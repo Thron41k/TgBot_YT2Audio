@@ -7,7 +7,7 @@ namespace TgBot_YT2Audio.DownloadTask
     public static class Helpers
     {
         private static readonly string[] Formats = ["240p", "360p", "480p", "720p", "1080p", "720p60", "1080p60"];
-        public static string[] AudioFormats => new[] {"m4a", "mp3"};
+        public static string[] AudioFormats => ["m4a", "mp3"];
 
         public static AudioConversionFormat GetAudioFormat(string format)
         {
@@ -18,6 +18,7 @@ namespace TgBot_YT2Audio.DownloadTask
                 _ => AudioConversionFormat.Mp3
             };
         }
+
         public static (List<FormatData> FormatList, List<string> FormatNames) GetFormatList(List<FormatData> formats)
         {
             var formatList = new List<FormatData>();
@@ -27,6 +28,7 @@ namespace TgBot_YT2Audio.DownloadTask
             }
             return (formatList, formatList.Select(x=>x.FormatNote).Distinct().ToList());
         }
+
         public static bool YouTubeUrlValidate(string url)
         {
             const string pattern = @"^((?:https?:)?\/\/)?((?:www|m)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$";

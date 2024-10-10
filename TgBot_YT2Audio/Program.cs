@@ -21,11 +21,12 @@ bot.OnMessage += async (message, type) =>
         if (Helpers.YouTubeUrlValidate(message.Text))
         {
             Message mes;
-            if(!Helpers.IsMusic(message.Text))
+            var isMusic = Helpers.IsMusic(message.Text);
+            if (!isMusic)
                 mes = await bot.SendTextMessageAsync(message.Chat, "Что вы хотите скачать?", replyMarkup: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио"));
             else
                 mes = await bot.SendTextMessageAsync(message.Chat, "Готовлюсь к скачиванию аудио...");
-            taskManager.AddTask(message.Text, message.From!.Id, mes, bot,true);
+            taskManager.AddTask(message, mes, bot,true);
         }
     }
     catch (Exception ex)

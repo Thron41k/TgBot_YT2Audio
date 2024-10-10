@@ -17,9 +17,9 @@ namespace TgBot_YT2Audio.DownloadTask
             return true;
         }
 
-        public void AddTask(string url, long fromId, Message mesMessageId, TelegramBotClient bot, bool force = false)
+        public void AddTask(Message initMessage, Message mesMessageId, TelegramBotClient bot, bool force = false)
         {
-            var dt = new DownloadTask(url, fromId, mesMessageId, bot);
+            var dt = new DownloadTask(initMessage, mesMessageId, bot);
             if (force) _ = dt.Force();
             _tasks.Add(dt);
             

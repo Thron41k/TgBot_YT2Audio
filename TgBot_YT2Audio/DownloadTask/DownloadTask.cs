@@ -9,7 +9,7 @@ using YoutubeDLSharp.Options;
 using File = System.IO.File;
 
 namespace TgBot_YT2Audio.DownloadTask;
-public class DownloadTask(string url, long id, Message message, TelegramBotClient bot)
+public class DownloadTask(Message initMessage, Message message, TelegramBotClient bot)
 {
     private TaskStates _taskState = TaskStates.Created;
     private TaskTypes _taskType = TaskTypes.None;
@@ -27,7 +27,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
 
     public bool Check(int messageId, long userId)
     {
-        return message.MessageId == messageId && id == userId;
+        return message.MessageId == messageId && initMessage.From!.Id == userId;
     }
 
     public async Task Update(CallbackQuery query)
@@ -86,13 +86,14 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                                     Output = Path.Combine(_ytDl.OutputFolder, "video", "video_%(id)s_%(format_note)s.%(ext)s")
                                 };
                                 var resV = await _ytDl.RunVideoDownload(
-                                    url, progress: progress,
+                                    initMessage.Text, progress: progress,
                                     overrideOptions: optV
                                 );
                                 await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
                                 await using Stream streamV = File.OpenRead(resV.Data);
                                 await bot.SendVideoAsync(message.Chat.Id, streamV, caption: _title,
                                     supportsStreaming: true);
+                                await bot.DeleteMessageAsync(initMessage.Chat.Id, initMessage.MessageId);
                                 await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
                                 File.Delete(resV.Data);
                             }
@@ -108,11 +109,12 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                                 Output = Path.Combine(_ytDl.OutputFolder, "audio", "audio_%(id)s_%(format_note)s.%(ext)s")
                             };
                             var resA = await _ytDl.RunAudioDownload(
-                                url, Helpers.GetAudioFormat(mes), progress: progress, overrideOptions: optA
+                                initMessage.Text, Helpers.GetAudioFormat(mes), progress: progress, overrideOptions: optA
                             );
                             await bot.EditMessageTextAsync(message.Chat.Id, message.MessageId, "Начинаю загрузку...");
                             await using Stream streamA = File.OpenRead(resA.Data);
                             await bot.SendAudioAsync(message.Chat.Id, streamA, caption: _title,title: _title);
+                            await bot.DeleteMessageAsync(initMessage.Chat.Id, initMessage.MessageId);
                             await bot.DeleteMessageAsync(message.Chat.Id, message.MessageId);
                             File.Delete(resA.Data);
                             Fail = true;
@@ -194,7 +196,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                     _taskType = TaskTypes.Video;
                     _taskState = TaskStates.TypeSelected;
                     await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Собираю информацию о видео...");
-                    var reVs = await _ytDl.RunVideoDataFetch(url);
+                    var reVs = await _ytDl.RunVideoDataFetch(initMessage.Text);
                     var result = Helpers.GetFormatList(reVs.Data.Formats.ToList());
                     _formats = result.FormatList;
                     _title = reVs.Data.Title;
@@ -205,7 +207,7 @@ public class DownloadTask(string url, long id, Message message, TelegramBotClien
                     _taskType = TaskTypes.Audio;
                     _taskState = TaskStates.FormatSelected;
                     await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Собираю информацию о аудио...");
-                    var resA = await _ytDl.RunVideoDataFetch(url);
+                    var resA = await _ytDl.RunVideoDataFetch(initMessage.Text);
                     _title = resA.Data.Title;
                     await bot.EditMessageTextAsync(message.Chat, message.MessageId, "Выберите формат",
                         replyMarkup: GetKeyboard(Helpers.AudioFormats));

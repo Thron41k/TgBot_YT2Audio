@@ -11,58 +11,36 @@ using File = System.IO.File;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
-    public class YouTubeTaskBase
+    public class YouTubeTaskBase(Message initMessage, TelegramBotClient bot)
     {
         private bool _progressQuoted;
-        protected readonly TelegramBotClient _bot;
+        protected readonly TelegramBotClient Bot;
         private readonly UrlTypesEnum _urlType;
         protected readonly Message _initMessage;
         protected Message? _message;
         protected TaskStatesEnum TaskState = TaskStatesEnum.Created;
-        protected string _title = "";
+        protected string Title = "";
         public delegate void CompleteHandler();
         public event CompleteHandler? Complete;
-        protected List<FormatData> _formats = [];
-        protected string? _quality = "";
 
-        protected readonly YoutubeDL _ytDl = new(30)
+        #region Delegates
+        protected delegate Task TaskFormatChooseCompleteDelegate(string? data);
+        protected delegate Task TaskTypeChooseCompleteDelegate(string? data);
+        protected delegate Task TaskQualityChooseCompleteDelegate(string? data);
+        protected TaskFormatChooseCompleteDelegate? TaskFormatChooseCompleteVar;
+        protected TaskTypeChooseCompleteDelegate? TaskTypeChooseCompleteVar;
+        protected TaskQualityChooseCompleteDelegate? TaskQualityChooseCompleteVar;
+        #endregion
+
+        protected readonly YoutubeDL YtDl = new(30)
         {
             YoutubeDLPath = Configuration.GetInstance().YoutubeDlPath,
             OutputFolder = Configuration.GetInstance().OutputFolder,
         };
 
-        public YouTubeTaskBase(Message initMessage, TelegramBotClient bot)
-        {
-            _initMessage = initMessage;
-            _bot = bot;
-            _urlType = urlType;
-            switch (_urlType)
-            {
-                case UrlTypesEnum.YouTubeVideo:
-                    _message = bot.SendTextMessageAsync(initMessage.Chat, "Что вы хотите скачать?", replyMarkup: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио")).Result;
-                    break;
-                case UrlTypesEnum.YouTubeMusic:
-                    _ = AudioSelected();
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
         public bool Check(int messageId, long userId)
         {
             return _message != null && _message.MessageId == messageId && _initMessage.From!.Id == userId;
-        }
-
-        private async Task AudioSelected(bool clear = false)
-        {
-            TaskState = TaskStatesEnum.FormatSelected;
-            if (!clear)
-                _message = await _bot.SendTextMessageAsync(_initMessage.Chat, "Выберите формат",
-                    replyMarkup: new InlineKeyboardMarkup().AddButtons("m4a", "mp3"));
-            else
-                await _bot.EditMessageTextAsync(_initMessage.Chat, _message!.MessageId, "Выберите формат",
-                    replyMarkup: new InlineKeyboardMarkup().AddButtons("m4a", "mp3"));
         }
 
         public async Task Update(object query)
@@ -73,13 +51,13 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                 switch (TaskState)
                 {
                     case TaskStatesEnum.FormatSelected:
-                        await TaskFormatChooseComplete(queryData.Data);
+                        await TaskFormatChooseCompleteVar?.Invoke(queryData.Data)!;
                         break;
                     case TaskStatesEnum.Created:
-                        await TaskTypeChooseComplete(queryData.Data);
+                        await TaskTypeChooseCompleteVar?.Invoke(queryData.Data)!;
                         break;
                     case TaskStatesEnum.TypeSelected:
-                        await TaskQualityChooseComplete(queryData.Data);
+                        await TaskQualityChooseCompleteVar?.Invoke(queryData.Data)!;
                         break;
                     case TaskStatesEnum.Downloading:
                     default:
@@ -95,7 +73,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         public async Task ErrorNotification()
         {
             Complete?.Invoke();
-            await _bot.EditMessageTextAsync(_message!.Chat.Id, _message.MessageId, "Что то пошло не так( попробуйте ещё раз.");
+            await Bot.EditMessageTextAsync(_message!.Chat.Id, _message.MessageId, "Что то пошло не так( попробуйте ещё раз.");
         }
 
         protected async void ChangeDownloadProgress(DownloadProgress p)
@@ -113,7 +91,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                     if (_progressQuoted) return;
                     _progressQuoted = true;
                     var unit = p.TotalDownloadSize.Replace(match.Value, "");
-                    await _bot.EditMessageTextAsync(_message!.Chat.Id, _message.MessageId,
+                    await Bot.EditMessageTextAsync(_message!.Chat.Id, _message.MessageId,
                         $"Скачано {Math.Round(p.Progress * result / 1f, 2)}{unit} из {result}{unit}. {totalPercent}%");
                 }
                 else

@@ -3,6 +3,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using TgBot_YT2Audio.DownloadTask.Enums;
 using YoutubeDLSharp;
+using YoutubeDLSharp.Metadata;
 using YoutubeDLSharp.Options;
 using File = System.IO.File;
 
@@ -10,8 +11,9 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
     public class YouTubeDownloadTaskVideo : YouTubeTaskBase
     {
-        public YouTubeDownloadTaskVideo(Message initMessage, TelegramBotClient bot) : base(
-            initMessage, bot)
+        private List<FormatData> _formats = [];
+        private string? _quality = "";
+        public YouTubeDownloadTaskVideo(Message initMessage, TelegramBotClient bot) : base(initMessage, bot)
         {
 
         }
@@ -24,7 +26,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                     TaskState = TaskStatesEnum.FormatSelected;
                     _quality = mes;
                     _formats = _formats.Where(x => x.FormatNote == _quality).ToList();
-                    await _bot.EditMessageTextAsync(_message!.Chat, _message.MessageId, "Выберите формат",
+                    await Bot.EditMessageTextAsync(_message!.Chat, _message.MessageId, "Выберите формат",
                         replyMarkup: Helpers.GetKeyboard(_formats.Select(x => x.Extension).Distinct()));
                     return;
                 }
@@ -42,7 +44,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             {
                 if (!string.IsNullOrEmpty(mes))
                 {
-                    await _bot.EditMessageTextAsync(_message!.Chat.Id, _message.MessageId, "Начинаю скачивание...");
+                    await Bot.EditMessageTextAsync(_message!.Chat.Id, _message.MessageId, "Начинаю скачивание...");
                     TaskState = TaskStatesEnum.Downloading;
                     var format = _formats.Where(x => x.Extension == mes).MaxBy(x => x.Bitrate);
                     if (format != null)
@@ -52,16 +54,16 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                             Format = format.FormatId,
                             Output = Path.Combine(Configuration.GetInstance().OutputFolder!, "video", "video_%(id)s_%(format_note)s.%(ext)s")
                         };
-                        var res = await _ytDl.RunVideoDownload(
+                        var res = await YtDl.RunVideoDownload(
                             _initMessage.Text, progress: new Progress<DownloadProgress>(ChangeDownloadProgress),
                             overrideOptions: opt
                         );
-                        await _bot.EditMessageTextAsync(_message.Chat.Id, _message.MessageId, "Начинаю загрузку...");
+                        await Bot.EditMessageTextAsync(_message.Chat.Id, _message.MessageId, "Начинаю загрузку...");
                         await using Stream stream = File.OpenRead(res.Data);
-                        await _bot.SendVideoAsync(_message.Chat.Id, stream, caption: _title,
+                        await Bot.SendVideoAsync(_message.Chat.Id, stream, caption: Title,
                             supportsStreaming: true);
-                        await _bot.DeleteMessageAsync(_initMessage.Chat.Id, _initMessage.MessageId);
-                        await _bot.DeleteMessageAsync(_message.Chat.Id, _message.MessageId);
+                        await Bot.DeleteMessageAsync(_initMessage.Chat.Id, _initMessage.MessageId);
+                        await Bot.DeleteMessageAsync(_message.Chat.Id, _message.MessageId);
                         File.Delete(res.Data);
                         //Complete?.Invoke();
                         return;
@@ -82,12 +84,12 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                 if (!string.IsNullOrEmpty(mes))
                 {
                     TaskState = TaskStatesEnum.TypeSelected;
-                    await _bot.EditMessageTextAsync(_message!.Chat, _message.MessageId, "Собираю информацию о видео...");
-                    var reVs = await _ytDl.RunVideoDataFetch(_initMessage.Text);
+                    await Bot.EditMessageTextAsync(_message!.Chat, _message.MessageId, "Собираю информацию о видео...");
+                    var reVs = await YtDl.RunVideoDataFetch(_initMessage.Text);
                     var result = Helpers.GetFormatList(reVs.Data.Formats.ToList());
                     _formats = result.FormatList;
-                    _title = reVs.Data.Title;
-                    await _bot.EditMessageTextAsync(_message.Chat, _message.MessageId, "Выберите качество", replyMarkup: Helpers.GetKeyboard(result.FormatNames));
+                    Title = reVs.Data.Title;
+                    await Bot.EditMessageTextAsync(_message.Chat, _message.MessageId, "Выберите качество", replyMarkup: Helpers.GetKeyboard(result.FormatNames));
                     return;
                 }
             }

@@ -24,8 +24,10 @@ namespace TgBot_YT2Audio.DownloadTask
                 case UrlTypesEnum.None:
                     break;
                 case UrlTypesEnum.YouTubeVideo:
+                    _tasks.Add(new YouTubeStartTask(initMessage, bot));
+                    break;
                 case UrlTypesEnum.YouTubeMusic:
-                    _tasks.Add(new YouTubeTaskBase(initMessage, bot, urlType));
+                    _tasks.Add(new YouTubeDownloadTaskMusic(initMessage, bot));
                     break;
                 case UrlTypesEnum.YouTubeVideoPlaylist:
                     break;
@@ -34,7 +36,27 @@ namespace TgBot_YT2Audio.DownloadTask
                 default:
                     throw new ArgumentOutOfRangeException(nameof(urlType), urlType, null);
             }
-            _tasks[^1].Complete += () => _tasks.Remove(_tasks[^1]);
+            _tasks[^1].TaskComplete += TaskComplete;
+        }
+
+        private void TaskComplete(object? sender, YouTubeTaskBase.YouTubeTaskBaseEventArgs e)
+        {
+            if (sender is YouTubeTaskBase task)
+            {
+                task.TaskComplete -= TaskComplete;
+                _tasks.Remove(task);
+            }
+            switch (e.Result)
+            {
+                case TaskResultEnum.YouTubeMusic:
+                    _tasks.Add(new YouTubeDownloadTaskMusic(e.InitMessage, e.Bot));
+                    _tasks[^1].TaskComplete += TaskComplete;
+                    break;
+                case TaskResultEnum.YouTubeVideo:
+                    _tasks.Add(new YouTubeDownloadTaskVideo(e.InitMessage, e.Bot));
+                    _tasks[^1].TaskComplete += TaskComplete;
+                    break;
+            }
         }
     }
 }

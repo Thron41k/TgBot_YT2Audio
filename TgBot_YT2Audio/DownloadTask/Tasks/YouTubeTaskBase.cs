@@ -2,26 +2,26 @@
 using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio.DownloadTask.Enums;
 using YoutubeDLSharp;
-using YoutubeDLSharp.Metadata;
-using YoutubeDLSharp.Options;
-using File = System.IO.File;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
     public class YouTubeTaskBase(Message initMessage, TelegramBotClient bot)
     {
         private bool _progressQuoted;
-        protected readonly TelegramBotClient Bot;
-        private readonly UrlTypesEnum _urlType;
-        protected readonly Message _initMessage;
-        protected Message? _message;
-        protected TaskStatesEnum TaskState = TaskStatesEnum.Created;
+        protected TelegramBotClient Bot { get; set; } = bot;
+        protected Message InitMessage { get; set; } = initMessage;
+        protected Message? Message {get; set; }
+        protected TaskStatesEnum TaskState = TaskStatesEnum.None;
         protected string Title = "";
-        public delegate void CompleteHandler();
-        public event CompleteHandler? Complete;
+        public class YouTubeTaskBaseEventArgs(Message initMessage, TelegramBotClient bot, TaskResultEnum result) : EventArgs
+        {
+            public Message InitMessage { get; } = initMessage;
+            public TelegramBotClient Bot { get; } = bot;
+            public TaskResultEnum Result { get; } = result;
+        }
+        public event EventHandler<YouTubeTaskBaseEventArgs>? TaskComplete;
 
         #region Delegates
         protected delegate Task TaskFormatChooseCompleteDelegate(string? data);
@@ -40,7 +40,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
 
         public bool Check(int messageId, long userId)
         {
-            return _message != null && _message.MessageId == messageId && _initMessage.From!.Id == userId;
+            return Message != null && Message.MessageId == messageId && InitMessage.From!.Id == userId;
         }
 
         public async Task Update(object query)
@@ -72,8 +72,8 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
 
         public async Task ErrorNotification()
         {
-            Complete?.Invoke();
-            await Bot.EditMessageTextAsync(_message!.Chat.Id, _message.MessageId, "Что то пошло не так( попробуйте ещё раз.");
+            OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.Failed));
+            await Bot.EditMessageTextAsync(Message!.Chat.Id, Message.MessageId, "Что то пошло не так( попробуйте ещё раз.");
         }
 
         protected async void ChangeDownloadProgress(DownloadProgress p)
@@ -91,7 +91,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                     if (_progressQuoted) return;
                     _progressQuoted = true;
                     var unit = p.TotalDownloadSize.Replace(match.Value, "");
-                    await Bot.EditMessageTextAsync(_message!.Chat.Id, _message.MessageId,
+                    await Bot.EditMessageTextAsync(Message!.Chat.Id, Message.MessageId,
                         $"Скачано {Math.Round(p.Progress * result / 1f, 2)}{unit} из {result}{unit}. {totalPercent}%");
                 }
                 else
@@ -103,6 +103,11 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             {
                 // ignored
             }
+        }
+
+        protected virtual void OnTaskComplete(YouTubeTaskBaseEventArgs e)
+        {
+            TaskComplete?.Invoke(this, e);
         }
     }
 }

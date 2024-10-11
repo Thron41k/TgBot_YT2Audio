@@ -23,7 +23,6 @@ bot.OnMessage += (message, type) =>
     {
         Console.WriteLine(ex);
     }
-
     return Task.CompletedTask;
 };
 bot.OnUpdate += async update =>

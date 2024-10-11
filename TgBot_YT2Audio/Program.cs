@@ -26,7 +26,7 @@ bot.OnMessage += async (message, type) =>
                 mes = await bot.SendTextMessageAsync(message.Chat, "Что вы хотите скачать?", replyMarkup: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио"));
             else
                 mes = await bot.SendTextMessageAsync(message.Chat, "Готовлюсь к скачиванию аудио...");
-            taskManager.AddTask(message, mes, bot,true);
+            taskManager.AddTask(message, mes, bot, isMusic);
         }
     }
     catch (Exception ex)

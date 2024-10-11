@@ -1,4 +1,6 @@
 ﻿using System.Text.RegularExpressions;
+using Telegram.Bot.Types.ReplyMarkups;
+using TgBot_YT2Audio.DownloadTask.Enums;
 using YoutubeDLSharp.Metadata;
 using YoutubeDLSharp.Options;
 
@@ -26,18 +28,34 @@ namespace TgBot_YT2Audio.DownloadTask
             {
                 formatList.AddRange(formats.Where(x => x.FormatNote == format).ToList());
             }
-            return (formatList, formatList.Select(x=>x.FormatNote).Distinct().ToList());
+            return (formatList, formatList.Select(x => x.FormatNote).Distinct().ToList());
         }
 
-        public static bool YouTubeUrlValidate(string url)
+        public static UrlTypesEnum YouTubeUrlValidate(string url)
         {
             const string pattern = @"^((?:https?:)?\/\/)?((?:www|m|music)\.)?((?:youtube\.com|youtu.be))(\/(?:[\w\-]+\?v=|embed\/|v\/)?)([\w\-]+)(\S+)?$";
-            return Regex.IsMatch(url, pattern);
+            if (!Regex.IsMatch(url, pattern)) return UrlTypesEnum.None;
+            var rg = Regex.Match(url, pattern);
+            if (rg.Groups[2].Value == "music.")
+            {
+                return rg.Groups[5].Value == "playlist" ? UrlTypesEnum.YouTubeMusicPlaylist : UrlTypesEnum.YouTubeMusic;
+            }
+            return rg.Groups[5].Value == "playlist" ? UrlTypesEnum.YouTubeVideoPlaylist : UrlTypesEnum.YouTubeVideo;
         }
 
-        public static bool IsMusic(string url)
+        public static InlineKeyboardMarkup GetKeyboard(IEnumerable<string> buttons)
         {
-            return url.IndexOf("music", StringComparison.Ordinal) != -1;
+            var keyboard = new InlineKeyboardMarkup();
+            var enumerable = buttons as string[] ?? buttons.ToArray();
+            for (var i = 0; i < enumerable.Length; i++)
+            {
+                if (i % 3 == 0 && i != 0)
+                {
+                    keyboard.AddNewRow();
+                }
+                keyboard.AddButton(enumerable[i], callbackData: enumerable[i]);
+            }
+            return keyboard;
         }
     }
 }

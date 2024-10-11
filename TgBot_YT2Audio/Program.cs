@@ -1,7 +1,5 @@
 ﻿using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio;
 using TgBot_YT2Audio.DownloadTask;
 
@@ -12,27 +10,21 @@ Console.WriteLine($"Local server {bot.LocalBotServer}");
 bot.Timeout = new TimeSpan(0, 1, 0, 0);
 var user = await bot.GetMeAsync();
 var taskManager = new TaskManager();
-bot.OnMessage += async (message, type) =>
+bot.OnMessage += (message, type) =>
 {
     try
     {
-        if (type != UpdateType.Message) return;
-        if (message.Text is null) return;
-        if (Helpers.YouTubeUrlValidate(message.Text))
-        {
-            Message mes;
-            var isMusic = Helpers.IsMusic(message.Text);
-            if (!isMusic)
-                mes = await bot.SendTextMessageAsync(message.Chat, "Что вы хотите скачать?", replyMarkup: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио"));
-            else
-                mes = await bot.SendTextMessageAsync(message.Chat, "Готовлюсь к скачиванию аудио...");
-            taskManager.AddTask(message, mes, bot, isMusic);
-        }
+        if (type != UpdateType.Message) return Task.CompletedTask;
+        if (message.Text is null) return Task.CompletedTask;
+        var urlType = Helpers.YouTubeUrlValidate(message.Text);
+        taskManager.AddTask(message, bot, urlType);
     }
     catch (Exception ex)
     {
         Console.WriteLine(ex);
     }
+
+    return Task.CompletedTask;
 };
 bot.OnUpdate += async update =>
 {
@@ -55,3 +47,4 @@ bot.OnUpdate += async update =>
 Console.WriteLine($"@{user.Username} запущен... Нажмите любую клавишу для выхода.");
 Console.ReadLine();
 cts.Cancel();
+

@@ -48,7 +48,7 @@ namespace TgBot_YT2Audio.DownloadTask
             if (sender is YouTubeTaskBase task)
             {
                 task.TaskComplete -= TaskComplete;
-                _tasks.Remove(task);
+                _tasks.Remove(task,task.TaskType != TaskTypesEnum.YouTubeTaskDownloadStart);
             }
             switch (e.Result)
             {

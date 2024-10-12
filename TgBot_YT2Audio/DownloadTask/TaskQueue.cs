@@ -24,13 +24,14 @@ namespace TgBot_YT2Audio.DownloadTask
 
         public Task<bool> Update(CallbackQuery query)
         {
-            var task = _workingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null);
+            var task = _workingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null) ??
+                       _waitingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null);
             if (task == null) return Task.FromResult(false);
             new Task(() => _ = task.Update(query)).Start();
             return Task.FromResult(true);
         }
 
-        public void Remove(YouTubeTaskBase task)
+        public void Remove(YouTubeTaskBase task,bool fromWaitList = true)
         {
             try
             {
@@ -40,6 +41,7 @@ namespace TgBot_YT2Audio.DownloadTask
                     _waitingList.Remove(task);
                 }
                 _workingList.Remove(task);
+                if(!fromWaitList)return;
                 if (_waitingList.Count <= 0 || !(_workingList.Count < Configuration.GetInstance().MaxTaskCount)) return;
                 _workingList.Add(_waitingList[0]);
                 _waitingList[0].Start();

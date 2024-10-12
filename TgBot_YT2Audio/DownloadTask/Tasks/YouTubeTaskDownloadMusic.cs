@@ -7,9 +7,13 @@ using File = System.IO.File;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
-    public class YouTubeTaskDownloadMusic(Message initMessage, TelegramBotClient bot)
-        : YouTubeTaskBase(initMessage, bot)
+    public class YouTubeTaskDownloadMusic : YouTubeTaskBase
     {
+        public YouTubeTaskDownloadMusic(Message initMessage, TelegramBotClient bot) : base(initMessage, bot)
+        {
+            TaskType = TaskTypesEnum.YouTubeTaskDownloadMusic;
+        }
+
         public override async Task Start()
         {
             await TaskTypeChooseComplete("");

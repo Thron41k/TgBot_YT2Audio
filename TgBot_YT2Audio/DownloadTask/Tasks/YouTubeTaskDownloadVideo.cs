@@ -8,11 +8,15 @@ using File = System.IO.File;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
-    public class YouTubeTaskDownloadVideo(Message initMessage, TelegramBotClient bot)
-        : YouTubeTaskBase(initMessage, bot)
+    public class YouTubeTaskDownloadVideo : YouTubeTaskBase
     {
         private List<FormatData> _formats = [];
         private string? _quality = "";
+
+        public YouTubeTaskDownloadVideo(Message initMessage, TelegramBotClient bot) : base(initMessage, bot)
+        {
+            TaskType = TaskTypesEnum.YouTubeTaskDownloadVideo;
+        }
 
         public override async Task Start()
         {

@@ -19,7 +19,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         protected string Title = "";
         protected string Id = "";
         protected readonly string Guid = Helpers.DownloadFileGuid();
-
+        public TaskTypesEnum TaskType = TaskTypesEnum.None;
         #region Complete Event
         public class YouTubeTaskBaseEventArgs(Message initMessage, TelegramBotClient bot, TaskResultEnum result) : EventArgs
         {

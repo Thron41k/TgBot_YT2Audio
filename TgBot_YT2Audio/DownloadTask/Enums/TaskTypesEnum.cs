@@ -2,7 +2,8 @@
 public enum TaskTypesEnum
 {
     None = 0,
-    Video = 1,
-    Audio = 2
+    YouTubeTaskDownloadVideo = 1,
+    YouTubeTaskDownloadMusic = 2,
+    YouTubeTaskDownloadStart = 3
 }
 

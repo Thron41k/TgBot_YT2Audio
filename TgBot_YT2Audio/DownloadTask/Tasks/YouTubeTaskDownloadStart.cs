@@ -5,9 +5,13 @@ using TgBot_YT2Audio.DownloadTask.Enums;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
-    public class YouTubeTaskDownloadStart(Message initMessage, TelegramBotClient bot)
-        : YouTubeTaskBase(initMessage, bot)
+    public class YouTubeTaskDownloadStart : YouTubeTaskBase
     {
+        public YouTubeTaskDownloadStart(Message initMessage, TelegramBotClient bot) : base(initMessage, bot)
+        {
+            TaskType = TaskTypesEnum.YouTubeTaskDownloadStart;
+        }
+
         public override async Task Start()
         {
             TaskState = TaskStatesEnum.Created;

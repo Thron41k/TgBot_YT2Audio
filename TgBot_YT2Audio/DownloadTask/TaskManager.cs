@@ -29,7 +29,7 @@ namespace TgBot_YT2Audio.DownloadTask
                     break;
                 case UrlTypesEnum.YouTubeMusic:
                     {
-                        var task = new YouTubeTaskDownloadMusic(initMessage, bot);
+                        var task = new YouTubeTaskDownloadMusic(initMessage, bot, initMessage.Text!);
                         task.TaskComplete += TaskComplete;
                         _tasks.Add(task);
                     }

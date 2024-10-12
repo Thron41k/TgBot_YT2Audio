@@ -8,13 +8,13 @@ namespace TgBot_YT2Audio.DownloadTask
     {
         private readonly List<YouTubeTaskBase> _workingList = [];
         private readonly List<YouTubeTaskBase> _waitingList = [];
-        private readonly List<YouTubeTaskBase> _startdList = [];
+        private readonly List<YouTubeTaskBase> _startedList = [];
 
         public void Add(YouTubeTaskBase task)
         {
             if (task.TaskType == TaskTypesEnum.YouTubeTaskDownloadStart)
             {
-                _startdList.Add(task);
+                _startedList.Add(task);
                 task.Start();
                 return;
             }
@@ -34,7 +34,7 @@ namespace TgBot_YT2Audio.DownloadTask
         {
             var task = (_workingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null) ??
                         _waitingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null)) ??
-                       _startdList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null);
+                       _startedList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null);
             if (task == null) return Task.FromResult(false);
             new Task(() => _ = task.Update(query)).Start();
             return Task.FromResult(true);
@@ -46,7 +46,7 @@ namespace TgBot_YT2Audio.DownloadTask
             {
                 if (task.TaskType == TaskTypesEnum.YouTubeTaskDownloadStart)
                 {
-                    _startdList.Remove(task);
+                    _startedList.Remove(task);
                     return;
                 }
                 if (_workingList.All(x => x != task))

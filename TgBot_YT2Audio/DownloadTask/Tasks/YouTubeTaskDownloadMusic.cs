@@ -13,7 +13,13 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         {
             TaskType = TaskTypesEnum.YouTubeTaskDownloadMusic;
         }
-
+        public YouTubeTaskDownloadMusic(Message initMessage, TelegramBotClient bot,string url = "") : base(initMessage, bot, url)
+        {
+            TaskType = TaskTypesEnum.YouTubeTaskDownloadMusic;
+            var messageId = InitMessage.MessageId;
+            InitMessage = SendMessageText(InitMessage.Chat.Id, "В очереди...").Result;
+            Bot.DeleteMessageAsync(InitMessage.Chat.Id, messageId, cancellationToken: CTokenSource!.Token);
+        }
         public override async Task Start()
         {
             await TaskFormatChooseComplete("");

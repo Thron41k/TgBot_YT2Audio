@@ -48,11 +48,12 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                     await EditMessageText(Message!.Chat.Id, Message.MessageId, "Собираю информацию о аудио...");
                     var resultFileInfo = await YtDl.RunVideoDataFetch(InitMessage.Text);
                     Title = resultFileInfo.Data.Title;
+                    Id = resultFileInfo.Data.ID;
                     await EditMessageText(Message!.Chat.Id, Message.MessageId, "Начинаю скачивание...");
                     TaskState = TaskStatesEnum.Downloading;
                     var opt = new OptionSet
                     {
-                        Output = Path.Combine(Configuration.GetInstance().OutputFolder!, "audio", "audio_%(id)s_%(format_note)s.%(ext)s")
+                        Output = Path.Combine(Configuration.GetInstance().OutputFolder!, "audio", $"{Guid}_%(id)s_%(format_note)s.%(ext)s")
                     };
                     var res = await YtDl.RunAudioDownload(
                         InitMessage.Text, Helpers.GetAudioFormat(mes), progress: new Progress<DownloadProgress>(ChangeDownloadProgress), overrideOptions: opt, ct: CTokenSource!.Token
@@ -69,6 +70,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             }
             catch (TaskCanceledException)
             {
+                Helpers.DeleteUncompletedFile("audio", Id, Guid);
                 return;
             }
             catch (Exception e)

@@ -5,6 +5,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio.DownloadTask.Enums;
 using YoutubeDLSharp;
+using File = System.IO.File;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
@@ -17,6 +18,8 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         protected Message? Message { get; set; }
         protected TaskStatesEnum TaskState = TaskStatesEnum.None;
         protected string Title = "";
+        protected string Id = "";
+        protected string Guid = Helpers.DownloadFileGuid();
         public class YouTubeTaskBaseEventArgs(Message initMessage, TelegramBotClient bot, TaskResultEnum result) : EventArgs
         {
             public Message InitMessage { get; } = initMessage;
@@ -35,7 +38,6 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             YoutubeDLPath = Configuration.GetInstance().YoutubeDlPath,
             OutputFolder = Configuration.GetInstance().OutputFolder,
         };
-
         public bool Check(int messageId, long userId)
         {
             return Message != null && Message.MessageId == messageId && InitMessage.From!.Id == userId;

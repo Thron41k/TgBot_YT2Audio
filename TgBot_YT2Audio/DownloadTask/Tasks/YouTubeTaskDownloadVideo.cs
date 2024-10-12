@@ -58,7 +58,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                         var opt = new OptionSet
                         {
                             Format = format.FormatId,
-                            Output = Path.Combine(Configuration.GetInstance().OutputFolder!, "video", "video_%(id)s_%(format_note)s.%(ext)s")
+                            Output = Path.Combine(Configuration.GetInstance().OutputFolder!, "video", $"{Guid}_%(id)s_%(format_note)s.%(ext)s")
                         };
                         var res = await YtDl.RunVideoDownload(
                             InitMessage.Text, progress: new Progress<DownloadProgress>(ChangeDownloadProgress),
@@ -79,6 +79,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             }
             catch (TaskCanceledException)
             {
+                Helpers.DeleteUncompletedFile("video", Id, Guid);
                 return;
             }
             catch (Exception e)
@@ -97,6 +98,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                 var res = await YtDl.RunVideoDataFetch(InitMessage.Text, ct: CTokenSource!.Token);
                 var result = Helpers.GetFormatList(res.Data.Formats.ToList());
                 _formats = result.FormatList;
+                Id = res.Data.ID;
                 Title = res.Data.Title;
                 await EditMessageText(Message.Chat.Id, Message.MessageId, "Выберите качество",
                     keyboard: Helpers.GetKeyboard(result.FormatNames));
@@ -104,7 +106,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             }
             catch (TaskCanceledException)
             {
-               return;
+                return;
             }
             catch (Exception e)
             {

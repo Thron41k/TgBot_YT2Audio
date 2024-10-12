@@ -59,5 +59,38 @@ namespace TgBot_YT2Audio.DownloadTask
             keyboard.AddButton("Отмена");
             return keyboard;
         }
+
+        public static void DeleteUncompletedFile(string type, string id, string guid)
+        {
+            if (string.IsNullOrEmpty(id)) return;
+            var path = Path.Combine(Configuration.GetInstance().OutputFolder!, type);
+            if (!Directory.Exists(path)) return;
+            new Thread(() =>
+            {
+                foreach (var file in Directory.EnumerateFiles(path, $"{guid}_{id}*"))
+                {
+                    while (File.Exists(file))
+                    {
+                        Thread.Sleep(1000);
+                        try
+                        {
+                            File.Delete(file);
+                        }
+                        catch (IOException)
+                        {
+
+                        }
+                    }
+                }
+            }).Start();
+        }
+
+        public static string DownloadFileGuid()
+        {
+            var random = new Random();
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            return new string(Enumerable.Repeat(chars, 8)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
     }
 }

@@ -19,15 +19,25 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         protected string Title = "";
         protected string Id = "";
         protected readonly string Guid = Helpers.DownloadFileGuid();
+
+        #region Complete Event
         public class YouTubeTaskBaseEventArgs(Message initMessage, TelegramBotClient bot, TaskResultEnum result) : EventArgs
         {
             public Message InitMessage { get; } = initMessage;
             public TelegramBotClient Bot { get; } = bot;
             public TaskResultEnum Result { get; } = result;
         }
+
         public event EventHandler<YouTubeTaskBaseEventArgs>? TaskComplete;
+        #endregion
 
         public abstract Task Start();
+
+        public async Task Wait()
+        {
+            Message = await SendMessageText(InitMessage.Chat.Id, "В очереди...");
+        }
+
         protected abstract Task TaskTypeChooseComplete(string? mes);
         protected abstract Task TaskQualityChooseComplete(string? mes);
         protected abstract Task TaskFormatChooseComplete(string? mes);

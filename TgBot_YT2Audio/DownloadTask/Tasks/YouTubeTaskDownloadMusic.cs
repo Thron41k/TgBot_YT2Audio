@@ -20,7 +20,10 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             try
             {
                 TaskState = TaskStatesEnum.FormatSelected;
-                Message = await SendMessageText(InitMessage.Chat.Id, "Выберите формат", keyboard: Helpers.GetKeyboard(Helpers.AudioFormats));
+                if (Message == null)
+                    Message = await SendMessageText(InitMessage.Chat.Id, "Выберите формат", keyboard: Helpers.GetKeyboard(Helpers.AudioFormats));
+                else
+                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Выберите формат", keyboard: Helpers.GetKeyboard(Helpers.AudioFormats));
                 return;
             }
             catch (TaskCanceledException)

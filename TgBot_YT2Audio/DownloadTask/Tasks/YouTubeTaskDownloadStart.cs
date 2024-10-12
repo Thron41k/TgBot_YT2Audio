@@ -11,7 +11,10 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         public override async Task Start()
         {
             TaskState = TaskStatesEnum.Created;
-            Message = await SendMessageText(InitMessage.Chat.Id, "Что вы хотите скачать?", keyboard: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио").AddNewRow().AddButton("Отмена"));
+            if (Message == null)
+                Message = await SendMessageText(InitMessage.Chat.Id, "Что вы хотите скачать?", keyboard: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио").AddNewRow().AddButton("Отмена"));
+            else
+                await EditMessageText(Message!.Chat.Id, Message.MessageId, "Что вы хотите скачать?", keyboard: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио").AddNewRow().AddButton("Отмена"));
         }
         protected override async Task TaskTypeChooseComplete(string? mes)
         {

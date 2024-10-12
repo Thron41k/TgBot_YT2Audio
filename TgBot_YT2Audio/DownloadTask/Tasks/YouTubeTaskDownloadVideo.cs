@@ -95,7 +95,10 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             try
             {
                 TaskState = TaskStatesEnum.TypeSelected;
-                Message = await SendMessageText(InitMessage.Chat.Id, "Собираю информацию о видео...");
+                if (Message == null)
+                    Message = await SendMessageText(InitMessage.Chat.Id, "Собираю информацию о видео...");
+                else
+                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Собираю информацию о видео...");
                 var res = await YtDl.RunVideoDataFetch(InitMessage.Text, ct: CTokenSource!.Token);
                 var result = Helpers.GetFormatList(res.Data.Formats.ToList());
                 _formats = result.FormatList;

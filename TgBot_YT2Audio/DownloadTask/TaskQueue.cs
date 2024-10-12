@@ -13,6 +13,7 @@ namespace TgBot_YT2Audio.DownloadTask
             if (_workingList.Count >= Configuration.GetInstance().MaxTaskCount)
             {
                 _waitingList.Add(task);
+                _ = task.Wait();
             }
             else
             {
@@ -33,6 +34,11 @@ namespace TgBot_YT2Audio.DownloadTask
         {
             try
             {
+                if (_workingList.All(x => x != task))
+                {
+                    if(_waitingList.All(x => x != task)) return;
+                    _waitingList.Remove(task);
+                }
                 _workingList.Remove(task);
                 if (_waitingList.Count <= 0 || !(_workingList.Count < Configuration.GetInstance().MaxTaskCount)) return;
                 _workingList.Add(_waitingList[0]);

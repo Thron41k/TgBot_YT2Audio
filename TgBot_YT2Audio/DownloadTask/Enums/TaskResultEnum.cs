@@ -11,6 +11,7 @@ namespace TgBot_YT2Audio.DownloadTask.Enums
         Failed = 0,
         Success = 1,
         YouTubeMusic = 2,
-        YouTubeVideo = 3
+        YouTubeVideo = 3,
+        Cancelled = 4
     }
 }

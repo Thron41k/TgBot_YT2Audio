@@ -55,6 +55,8 @@ namespace TgBot_YT2Audio.DownloadTask
                 }
                 keyboard.AddButton(enumerable[i], callbackData: enumerable[i]);
             }
+            keyboard.AddNewRow();
+            keyboard.AddButton("Отмена");
             return keyboard;
         }
     }

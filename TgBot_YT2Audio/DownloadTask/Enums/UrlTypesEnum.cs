@@ -12,6 +12,7 @@ namespace TgBot_YT2Audio.DownloadTask.Enums
         YouTubeVideo = 1,
         YouTubeMusic = 2,
         YouTubeVideoPlaylist = 3,
-        YouTubeMusicPlaylist = 4
+        YouTubeMusicPlaylist = 4,
+        YouTubeAny = 5
     }
 }

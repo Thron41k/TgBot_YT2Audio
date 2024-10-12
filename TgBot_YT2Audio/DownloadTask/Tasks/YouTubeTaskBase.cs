@@ -2,17 +2,19 @@
 using System.Text.RegularExpressions;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio.DownloadTask.Enums;
 using YoutubeDLSharp;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
-    public class YouTubeTaskBase(Message initMessage, TelegramBotClient bot)
+    public abstract class YouTubeTaskBase(Message initMessage, TelegramBotClient bot) : IDisposable
     {
+        protected readonly CancellationTokenSource? CTokenSource = new();
         private bool _progressQuoted;
         protected TelegramBotClient Bot { get; set; } = bot;
         protected Message InitMessage { get; set; } = initMessage;
-        protected Message? Message {get; set; }
+        protected Message? Message { get; set; }
         protected TaskStatesEnum TaskState = TaskStatesEnum.None;
         protected string Title = "";
         public class YouTubeTaskBaseEventArgs(Message initMessage, TelegramBotClient bot, TaskResultEnum result) : EventArgs
@@ -23,16 +25,12 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         }
         public event EventHandler<YouTubeTaskBaseEventArgs>? TaskComplete;
 
-        #region Delegates
-        protected delegate Task TaskFormatChooseCompleteDelegate(string? data);
-        protected delegate Task TaskTypeChooseCompleteDelegate(string? data);
-        protected delegate Task TaskQualityChooseCompleteDelegate(string? data);
-        protected TaskFormatChooseCompleteDelegate? TaskFormatChooseCompleteVar;
-        protected TaskTypeChooseCompleteDelegate? TaskTypeChooseCompleteVar;
-        protected TaskQualityChooseCompleteDelegate? TaskQualityChooseCompleteVar;
-        #endregion
+        public abstract Task Start();
+        protected abstract Task TaskTypeChooseComplete(string? mes);
+        protected abstract Task TaskQualityChooseComplete(string? mes);
+        protected abstract Task TaskFormatChooseComplete(string? mes);
 
-        protected readonly YoutubeDL YtDl = new(30)
+        protected readonly YoutubeDL YtDl = new(1)
         {
             YoutubeDLPath = Configuration.GetInstance().YoutubeDlPath,
             OutputFolder = Configuration.GetInstance().OutputFolder,
@@ -48,16 +46,21 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             try
             {
                 var queryData = (CallbackQuery)query;
+                if (queryData.Data == "Отмена")
+                {
+                    await Cancel();
+                    return;
+                }
                 switch (TaskState)
                 {
                     case TaskStatesEnum.FormatSelected:
-                        await TaskFormatChooseCompleteVar?.Invoke(queryData.Data)!;
+                        await TaskFormatChooseComplete(queryData.Data);
                         break;
                     case TaskStatesEnum.Created:
-                        await TaskTypeChooseCompleteVar?.Invoke(queryData.Data)!;
+                        await TaskTypeChooseComplete(queryData.Data);
                         break;
                     case TaskStatesEnum.TypeSelected:
-                        await TaskQualityChooseCompleteVar?.Invoke(queryData.Data)!;
+                        await TaskQualityChooseComplete(queryData.Data);
                         break;
                     case TaskStatesEnum.Downloading:
                     default:
@@ -70,10 +73,42 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             }
         }
 
+        private async Task Cancel()
+        {
+            await CTokenSource?.CancelAsync()!;
+            await Bot.DeleteMessageAsync(InitMessage.Chat.Id, InitMessage.MessageId);
+            await Bot.DeleteMessageAsync(Message!.Chat.Id, Message.MessageId);
+            OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.Cancelled));
+        }
+
+        protected async Task EditMessageText(long chatId, int messageId, string text, bool useKeyboard = true, InlineKeyboardMarkup? keyboard = null)
+        {
+            if (!useKeyboard)
+            {
+                await Bot.EditMessageTextAsync(chatId, messageId, text, cancellationToken: CTokenSource!.Token);
+                return;
+            }
+
+            if (keyboard != null)
+            {
+                await Bot.EditMessageTextAsync(chatId, messageId, text, replyMarkup: keyboard, cancellationToken: CTokenSource!.Token);
+                return;
+            }
+
+            await Bot.EditMessageTextAsync(chatId, messageId, text, replyMarkup: new InlineKeyboardMarkup().AddButton("Отмена"), cancellationToken: CTokenSource!.Token);
+        }
+
+        protected async Task<Message> SendMessageText(long chatId, string text, bool useKeyboard = true, InlineKeyboardMarkup? keyboard = null)
+        {
+            if (!useKeyboard) return await Bot.SendTextMessageAsync(chatId, text, cancellationToken: CTokenSource!.Token);
+            if (keyboard != null) return await Bot.SendTextMessageAsync(chatId, text, replyMarkup: keyboard, cancellationToken: CTokenSource!.Token);
+            return await Bot.SendTextMessageAsync(chatId, text, replyMarkup: new InlineKeyboardMarkup().AddButton("Отмена"), cancellationToken: CTokenSource!.Token);
+        }
+
         public async Task ErrorNotification()
         {
             OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.Failed));
-            await Bot.EditMessageTextAsync(Message!.Chat.Id, Message.MessageId, "Что то пошло не так( попробуйте ещё раз.");
+            await EditMessageText(Message!.Chat.Id, Message.MessageId, "Что то пошло не так( попробуйте ещё раз.", false);
         }
 
         protected async void ChangeDownloadProgress(DownloadProgress p)
@@ -91,7 +126,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                     if (_progressQuoted) return;
                     _progressQuoted = true;
                     var unit = p.TotalDownloadSize.Replace(match.Value, "");
-                    await Bot.EditMessageTextAsync(Message!.Chat.Id, Message.MessageId,
+                    await EditMessageText(Message!.Chat.Id, Message.MessageId,
                         $"Скачано {Math.Round(p.Progress * result / 1f, 2)}{unit} из {result}{unit}. {totalPercent}%");
                 }
                 else
@@ -105,9 +140,14 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             }
         }
 
-        protected virtual void OnTaskComplete(YouTubeTaskBaseEventArgs e)
+        protected void OnTaskComplete(YouTubeTaskBaseEventArgs e)
         {
             TaskComplete?.Invoke(this, e);
+        }
+
+        public void Dispose()
+        {
+            CTokenSource?.Dispose();
         }
     }
 }

@@ -32,7 +32,7 @@ bot.OnUpdate += async update =>
         if (update is { CallbackQuery: { } query })
         {
             await bot.AnswerCallbackQueryAsync(query.Id);
-            if (!taskManager.UpdateTask(query))
+            if (!await taskManager.UpdateTask(query))
             {
                 await bot.EditMessageTextAsync(query.Message!.Chat, query.Message!.MessageId, "Что то пошло не так( попробуйте ещё раз.");
             }

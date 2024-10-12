@@ -8,17 +8,18 @@ using File = System.IO.File;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
-    public class YouTubeDownloadTaskVideo : YouTubeTaskBase
+    public class YouTubeTaskDownloadVideo(Message initMessage, TelegramBotClient bot)
+        : YouTubeTaskBase(initMessage, bot)
     {
         private List<FormatData> _formats = [];
         private string? _quality = "";
-        public YouTubeDownloadTaskVideo(Message initMessage, TelegramBotClient bot) : base(initMessage, bot)
+
+        public override async Task Start()
         {
-            TaskQualityChooseCompleteVar = TaskQualityChooseComplete;
-            TaskFormatChooseCompleteVar = TaskFormatChooseComplete;
-            _ = TaskTypeChooseComplete();
+            await TaskTypeChooseComplete("");
         }
-        private async Task TaskQualityChooseComplete(string? mes)
+
+        protected override async Task TaskQualityChooseComplete(string? mes)
         {
             try
             {
@@ -27,10 +28,14 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                     TaskState = TaskStatesEnum.FormatSelected;
                     _quality = mes;
                     _formats = _formats.Where(x => x.FormatNote == _quality).ToList();
-                    await Bot.EditMessageTextAsync(Message!.Chat, Message.MessageId, "Выберите формат",
-                        replyMarkup: Helpers.GetKeyboard(_formats.Select(x => x.Extension).Distinct()));
+                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Выберите формат",
+                        keyboard: Helpers.GetKeyboard(_formats.Select(x => x.Extension).Distinct()));
                     return;
                 }
+            }
+            catch (TaskCanceledException)
+            {
+                return;
             }
             catch (Exception e)
             {
@@ -39,13 +44,13 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             await ErrorNotification();
         }
 
-        private async Task TaskFormatChooseComplete(string? mes)
+        protected override async Task TaskFormatChooseComplete(string? mes)
         {
             try
             {
                 if (!string.IsNullOrEmpty(mes))
                 {
-                    await Bot.EditMessageTextAsync(Message!.Chat.Id, Message.MessageId, "Начинаю скачивание...");
+                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Начинаю скачивание...");
                     TaskState = TaskStatesEnum.Downloading;
                     var format = _formats.Where(x => x.Extension == mes).MaxBy(x => x.Bitrate);
                     if (format != null)
@@ -57,19 +62,24 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                         };
                         var res = await YtDl.RunVideoDownload(
                             InitMessage.Text, progress: new Progress<DownloadProgress>(ChangeDownloadProgress),
-                            overrideOptions: opt
+                            overrideOptions: opt,
+                            ct: CTokenSource!.Token
                         );
-                        await Bot.EditMessageTextAsync(Message.Chat.Id, Message.MessageId, "Начинаю загрузку...");
+                        await EditMessageText(Message.Chat.Id, Message.MessageId, "Начинаю загрузку...");
                         await using Stream stream = File.OpenRead(res.Data);
                         await Bot.SendVideoAsync(Message.Chat.Id, stream, caption: Title,
-                            supportsStreaming: true);
-                        await Bot.DeleteMessageAsync(InitMessage.Chat.Id, InitMessage.MessageId);
-                        await Bot.DeleteMessageAsync(Message.Chat.Id, Message.MessageId);
+                            supportsStreaming: true, cancellationToken: CTokenSource!.Token);
+                        await Bot.DeleteMessageAsync(InitMessage.Chat.Id, InitMessage.MessageId, cancellationToken: CTokenSource!.Token);
+                        await Bot.DeleteMessageAsync(Message.Chat.Id, Message.MessageId, cancellationToken: CTokenSource!.Token);
                         File.Delete(res.Data);
                         OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.Success));
                         return;
                     }
                 }
+            }
+            catch (TaskCanceledException)
+            {
+                return;
             }
             catch (Exception e)
             {
@@ -78,18 +88,23 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             await ErrorNotification();
         }
 
-        private async Task TaskTypeChooseComplete()
+        protected override async Task TaskTypeChooseComplete(string? mes)
         {
             try
             {
                 TaskState = TaskStatesEnum.TypeSelected;
-                Message = await Bot.SendTextMessageAsync(InitMessage.Chat, "Собираю информацию о видео...");
-                var res = await YtDl.RunVideoDataFetch(InitMessage.Text);
+                Message = await SendMessageText(InitMessage.Chat.Id, "Собираю информацию о видео...");
+                var res = await YtDl.RunVideoDataFetch(InitMessage.Text, ct: CTokenSource!.Token);
                 var result = Helpers.GetFormatList(res.Data.Formats.ToList());
                 _formats = result.FormatList;
                 Title = res.Data.Title;
-                await Bot.EditMessageTextAsync(Message.Chat, Message.MessageId, "Выберите качество", replyMarkup: Helpers.GetKeyboard(result.FormatNames));
+                await EditMessageText(Message.Chat.Id, Message.MessageId, "Выберите качество",
+                    keyboard: Helpers.GetKeyboard(result.FormatNames));
                 return;
+            }
+            catch (TaskCanceledException)
+            {
+               return;
             }
             catch (Exception e)
             {

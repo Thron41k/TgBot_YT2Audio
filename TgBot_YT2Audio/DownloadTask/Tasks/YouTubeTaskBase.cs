@@ -12,8 +12,8 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
     {
         protected readonly CancellationTokenSource? CTokenSource = new();
         private bool _progressQuoted;
-        protected TelegramBotClient Bot { get; set; } = bot;
-        protected Message InitMessage { get; set; } = initMessage;
+        protected TelegramBotClient Bot { get; } = bot;
+        protected Message InitMessage { get; } = initMessage;
         protected Message? Message { get; set; }
         protected TaskStatesEnum TaskState = TaskStatesEnum.None;
         protected string Title = "";

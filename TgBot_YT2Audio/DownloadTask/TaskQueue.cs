@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Telegram.Bot.Types;
+﻿using Telegram.Bot.Types;
 using TgBot_YT2Audio.DownloadTask.Tasks;
 
 namespace TgBot_YT2Audio.DownloadTask
@@ -26,12 +21,12 @@ namespace TgBot_YT2Audio.DownloadTask
             }
         }
 
-        public async Task<bool> Update(CallbackQuery query)
+        public Task<bool> Update(CallbackQuery query)
         {
             var task = _workingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null);
-            if (task == null) return false;
+            if (task == null) return Task.FromResult(false);
             new Task(() => _ = task.Update(query)).Start();
-            return true;
+            return Task.FromResult(true);
         }
 
         public void Remove(YouTubeTaskBase task)

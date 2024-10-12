@@ -5,7 +5,6 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio.DownloadTask.Enums;
 using YoutubeDLSharp;
-using File = System.IO.File;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
@@ -19,7 +18,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         protected TaskStatesEnum TaskState = TaskStatesEnum.None;
         protected string Title = "";
         protected string Id = "";
-        protected string Guid = Helpers.DownloadFileGuid();
+        protected readonly string Guid = Helpers.DownloadFileGuid();
         public class YouTubeTaskBaseEventArgs(Message initMessage, TelegramBotClient bot, TaskResultEnum result) : EventArgs
         {
             public Message InitMessage { get; } = initMessage;
@@ -37,6 +36,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         {
             YoutubeDLPath = Configuration.GetInstance().YoutubeDlPath,
             OutputFolder = Configuration.GetInstance().OutputFolder,
+            FFmpegPath = Configuration.GetInstance().FFmpegPath,
         };
         public bool Check(int messageId, long userId)
         {
@@ -107,7 +107,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             return await Bot.SendTextMessageAsync(chatId, text, replyMarkup: new InlineKeyboardMarkup().AddButton("Отмена"), cancellationToken: CTokenSource!.Token);
         }
 
-        public async Task ErrorNotification()
+        protected async Task ErrorNotification()
         {
             OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.Failed));
             await EditMessageText(Message!.Chat.Id, Message.MessageId, "Что то пошло не так( попробуйте ещё раз.", false);
@@ -115,30 +115,38 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
 
         protected async void ChangeDownloadProgress(DownloadProgress p)
         {
-            try
+            switch (p.State)
             {
-                if (string.IsNullOrEmpty(p.TotalDownloadSize)) return;
-                var pattern = new Regex("[0-9]*[.]?[0-9]+");
-                var match = pattern.Match(p.TotalDownloadSize);
-                var tryResult = float.TryParse(match.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var result);
-                if (!tryResult) return;
-                var totalPercent = (float)Math.Round(100f * p.Progress / 1f, 2);
-                if ((int)totalPercent % 10 <= 3)
-                {
-                    if (_progressQuoted) return;
-                    _progressQuoted = true;
-                    var unit = p.TotalDownloadSize.Replace(match.Value, "");
-                    await EditMessageText(Message!.Chat.Id, Message.MessageId,
-                        $"Скачано {Math.Round(p.Progress * result / 1f, 2)}{unit} из {result}{unit}. {totalPercent}%");
-                }
-                else
-                {
-                    _progressQuoted = false;
-                }
-            }
-            catch
-            {
-                // ignored
+                case DownloadState.PostProcessing:
+                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Подготовка к загрузке...");
+                    return;
+                case DownloadState.Downloading:
+                    try
+                    {
+                        if (string.IsNullOrEmpty(p.TotalDownloadSize)) return;
+                        var pattern = new Regex("[0-9]*[.]?[0-9]+");
+                        var match = pattern.Match(p.TotalDownloadSize);
+                        var tryResult = float.TryParse(match.Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out var result);
+                        if (!tryResult) return;
+                        var totalPercent = (float)Math.Round(100f * p.Progress / 1f, 2);
+                        if ((int)totalPercent % 10 <= 3)
+                        {
+                            if (_progressQuoted) return;
+                            _progressQuoted = true;
+                            var unit = p.TotalDownloadSize.Replace(match.Value, "");
+                            await EditMessageText(Message!.Chat.Id, Message.MessageId,
+                                $"Скачано {Math.Round(p.Progress * result / 1f, 2)}{unit} из {result}{unit}. {totalPercent}%");
+                        }
+                        else
+                        {
+                            _progressQuoted = false;
+                        }
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                    break;
             }
         }
 

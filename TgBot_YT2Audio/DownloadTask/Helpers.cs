@@ -21,6 +21,16 @@ namespace TgBot_YT2Audio.DownloadTask
             };
         }
 
+        public static VideoRecodeFormat GetVideoFormat(string format)
+        {
+            return format switch
+            {
+                "mp4" => VideoRecodeFormat.Mp4,
+                "webm" => VideoRecodeFormat.Webm,
+                _ => VideoRecodeFormat.Mp4
+            };
+        }
+
         public static (List<FormatData> FormatList, List<string> FormatNames) GetFormatList(List<FormatData> formats)
         {
             var formatList = new List<FormatData>();

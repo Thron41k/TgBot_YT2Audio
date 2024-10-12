@@ -57,13 +57,14 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                     {
                         var opt = new OptionSet
                         {
-                            Format = format.FormatId,
+                            Format = $"{format.FormatId}+bestaudio",
                             Output = Path.Combine(Configuration.GetInstance().OutputFolder!, "video", $"{Guid}_%(id)s_%(format_note)s.%(ext)s")
                         };
                         var res = await YtDl.RunVideoDownload(
                             InitMessage.Text, progress: new Progress<DownloadProgress>(ChangeDownloadProgress),
                             overrideOptions: opt,
-                            ct: CTokenSource!.Token
+                            ct: CTokenSource!.Token,
+                            recodeFormat: Helpers.GetVideoFormat(mes)
                         );
                         await EditMessageText(Message.Chat.Id, Message.MessageId, "Начинаю загрузку...");
                         await using Stream stream = File.OpenRead(res.Data);

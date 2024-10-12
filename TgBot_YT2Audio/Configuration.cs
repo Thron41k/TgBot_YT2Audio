@@ -9,29 +9,32 @@ public class Configuration
 
     public string? OutputFolder { get; }
     public string? YoutubeDlPath { get; }
+    public string? FFmpegPath { get; }
     public string? BotApiToken { get; }
     public string? LocalApiServer { get; }
     public int? MaxTaskCount { get; }
 
     [JsonConstructor]
-    private Configuration(string? outputFolder, string? youtubeDlPath, string? botApiToken, string? localApiServer, int? maxTaskCount)
+    private Configuration(string? outputFolder, string? youtubeDlPath, string? botApiToken, string? localApiServer, int? maxTaskCount, string? fFmpegPath)
     {
         OutputFolder = outputFolder;
         YoutubeDlPath = youtubeDlPath;
         BotApiToken = botApiToken;
         LocalApiServer = localApiServer;
         MaxTaskCount = maxTaskCount;
+        FFmpegPath = fFmpegPath;
     }
 
     private Configuration()
     {
-
+        
     }
 
     private bool IsValid()
     {
         if (string.IsNullOrEmpty(OutputFolder)) return false;
         if (string.IsNullOrEmpty(YoutubeDlPath)) return false;
+        if (string.IsNullOrEmpty(FFmpegPath)) return false;
         return !string.IsNullOrEmpty(BotApiToken);
     }
     public static Configuration GetInstance()

@@ -16,29 +16,12 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
 
         public override async Task Start()
         {
-            await TaskTypeChooseComplete("");
+            await TaskFormatChooseComplete("");
         }
 
-        protected override async Task TaskTypeChooseComplete(string? mes)
+        protected override Task TaskTypeChooseComplete(string? mes)
         {
-            try
-            {
-                TaskState = TaskStatesEnum.FormatSelected;
-                if (Message == null)
-                    Message = await SendMessageText(InitMessage.Chat.Id, "Выберите формат", keyboard: Helpers.GetKeyboard(Helpers.AudioFormats));
-                else
-                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Выберите формат", keyboard: Helpers.GetKeyboard(Helpers.AudioFormats));
-                return;
-            }
-            catch (TaskCanceledException)
-            {
-                return;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-            await ErrorNotification();
+            return Task.CompletedTask;
         }
 
         protected override Task TaskQualityChooseComplete(string? mes)
@@ -50,30 +33,27 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         {
             try
             {
-                if (!string.IsNullOrEmpty(mes))
+                Message = await SendMessageText(InitMessage!.Chat.Id, "Собираю информацию о аудио...");
+                var resultFileInfo = await YtDl.RunVideoDataFetch(InitMessage.Text);
+                Title = resultFileInfo.Data.Title;
+                Id = resultFileInfo.Data.ID;
+                await EditMessageText(Message!.Chat.Id, Message.MessageId, "Начинаю скачивание...");
+                TaskState = TaskStatesEnum.Downloading;
+                var opt = new OptionSet
                 {
-                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Собираю информацию о аудио...");
-                    var resultFileInfo = await YtDl.RunVideoDataFetch(InitMessage.Text);
-                    Title = resultFileInfo.Data.Title;
-                    Id = resultFileInfo.Data.ID;
-                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Начинаю скачивание...");
-                    TaskState = TaskStatesEnum.Downloading;
-                    var opt = new OptionSet
-                    {
-                        Output = Path.Combine(Configuration.GetInstance().OutputFolder!, "audio", $"{Guid}_%(id)s_%(format_note)s.%(ext)s")
-                    };
-                    var res = await YtDl.RunAudioDownload(
-                        InitMessage.Text, Helpers.GetAudioFormat(mes), progress: new Progress<DownloadProgress>(ChangeDownloadProgress), overrideOptions: opt, ct: CTokenSource!.Token
-                    );
-                    await EditMessageText(Message.Chat.Id, Message.MessageId, "Начинаю загрузку...");
-                    await using Stream stream = File.OpenRead(res.Data);
-                    await Bot.SendAudioAsync(Message.Chat.Id, stream, caption: Title, title: Title, cancellationToken: CTokenSource!.Token);
-                    await Bot.DeleteMessageAsync(InitMessage.Chat.Id, InitMessage.MessageId, cancellationToken: CTokenSource!.Token);
-                    await Bot.DeleteMessageAsync(Message.Chat.Id, Message.MessageId, cancellationToken: CTokenSource!.Token);
-                    File.Delete(res.Data);
-                    OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.Success));
-                    return;
-                }
+                    Output = Path.Combine(Configuration.GetInstance().OutputFolder!, "audio", $"{Guid}_%(id)s_%(format_note)s.%(ext)s")
+                };
+                var res = await YtDl.RunAudioDownload(
+                    InitMessage.Text, AudioConversionFormat.Mp3, progress: new Progress<DownloadProgress>(ChangeDownloadProgress), overrideOptions: opt, ct: CTokenSource!.Token
+                );
+                await EditMessageText(Message.Chat.Id, Message.MessageId, "Начинаю загрузку...");
+                await using Stream stream = File.OpenRead(res.Data);
+                await Bot.SendAudioAsync(Message.Chat.Id, stream, caption: Title, title: Title, cancellationToken: CTokenSource!.Token);
+                await Bot.DeleteMessageAsync(InitMessage.Chat.Id, InitMessage.MessageId, cancellationToken: CTokenSource!.Token);
+                await Bot.DeleteMessageAsync(Message.Chat.Id, Message.MessageId, cancellationToken: CTokenSource!.Token);
+                File.Delete(res.Data);
+                OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.Success));
+                return;
             }
             catch (TaskCanceledException)
             {

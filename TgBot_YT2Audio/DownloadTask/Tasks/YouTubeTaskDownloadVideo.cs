@@ -11,8 +11,6 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
     public class YouTubeTaskDownloadVideo : YouTubeTaskBase
     {
         private List<FormatData> _formats = [];
-        private string? _quality = "";
-
         public YouTubeTaskDownloadVideo(Message initMessage, TelegramBotClient bot) : base(initMessage, bot)
         {
             TaskType = TaskTypesEnum.YouTubeTaskDownloadVideo;
@@ -23,32 +21,12 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             await TaskTypeChooseComplete("");
         }
 
-        protected override async Task TaskQualityChooseComplete(string? mes)
+        protected override Task TaskFormatChooseComplete(string? mes)
         {
-            try
-            {
-                if (!string.IsNullOrEmpty(mes))
-                {
-                    TaskState = TaskStatesEnum.FormatSelected;
-                    _quality = mes;
-                    _formats = _formats.Where(x => x.FormatNote == _quality).ToList();
-                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Выберите формат",
-                        keyboard: Helpers.GetKeyboard(_formats.Select(x => x.Extension).Distinct()));
-                    return;
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                return;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-            }
-            await ErrorNotification();
+            return Task.CompletedTask;
         }
 
-        protected override async Task TaskFormatChooseComplete(string? mes)
+        protected override async Task TaskQualityChooseComplete(string? mes)
         {
             try
             {
@@ -56,7 +34,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                 {
                     await EditMessageText(Message!.Chat.Id, Message.MessageId, "Начинаю скачивание...");
                     TaskState = TaskStatesEnum.Downloading;
-                    var format = _formats.Where(x => x.Extension == mes).MaxBy(x => x.Bitrate);
+                    var format = _formats.Where(x => x.FormatNote == mes && x.Extension == "mp4").MaxBy(x => x.Bitrate);
                     if (format != null)
                     {
                         var opt = new OptionSet
@@ -67,8 +45,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                         var res = await YtDl.RunVideoDownload(
                             InitMessage.Text, progress: new Progress<DownloadProgress>(ChangeDownloadProgress),
                             overrideOptions: opt,
-                            ct: CTokenSource!.Token,
-                            recodeFormat: Helpers.GetVideoFormat(mes)
+                            ct: CTokenSource!.Token
                         );
                         await EditMessageText(Message.Chat.Id, Message.MessageId, "Начинаю загрузку...");
                         await using Stream stream = File.OpenRead(res.Data);

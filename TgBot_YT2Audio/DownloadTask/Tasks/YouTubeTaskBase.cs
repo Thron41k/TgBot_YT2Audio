@@ -5,21 +5,23 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio.DownloadTask.Enums;
 using YoutubeDLSharp;
+using YoutubeDLSharp.Metadata;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
-    public abstract class YouTubeTaskBase(Message initMessage, TelegramBotClient bot) : IDisposable
+    public abstract class YouTubeTaskBase(Message initMessage, TelegramBotClient bot, string url = "") : IDisposable
     {
         protected readonly CancellationTokenSource? CTokenSource = new();
         private bool _progressQuoted;
         protected TelegramBotClient Bot { get; } = bot;
-        protected Message InitMessage { get; } = initMessage;
-        protected Message? Message { get; set; }
+        protected Message InitMessage { get; set; } = initMessage;
         protected TaskStatesEnum TaskState = TaskStatesEnum.None;
         protected string Title = "";
         protected string Id = "";
         protected readonly string Guid = Helpers.DownloadFileGuid();
         public TaskTypesEnum TaskType = TaskTypesEnum.None;
+        public FormatData? Format { get; set; }
+        public string Url = url;
         #region Complete Event
         public class YouTubeTaskBaseEventArgs(Message initMessage, TelegramBotClient bot, TaskResultEnum result) : EventArgs
         {
@@ -35,7 +37,8 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
 
         public async Task Wait()
         {
-            Message = await SendMessageText(InitMessage.Chat.Id, "В очереди...");
+            TaskState = TaskStatesEnum.Wait;
+            await EditMessageText(InitMessage.Chat.Id, InitMessage.MessageId, "В очереди...");
         }
 
         protected abstract Task TaskTypeChooseComplete(string? mes);
@@ -48,9 +51,10 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             OutputFolder = Configuration.GetInstance().OutputFolder,
             FFmpegPath = Configuration.GetInstance().FFmpegPath,
         };
-        public bool Check(int messageId, long userId)
+
+        public bool Check(int messageId, long chatId)
         {
-            return Message != null && Message.MessageId == messageId && InitMessage.From!.Id == userId;
+            return InitMessage.MessageId == messageId && InitMessage.Chat.Id == chatId;
         }
 
         public async Task Update(object query)
@@ -89,7 +93,6 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         {
             await CTokenSource?.CancelAsync()!;
             await Bot.DeleteMessageAsync(InitMessage.Chat.Id, InitMessage.MessageId);
-            await Bot.DeleteMessageAsync(Message!.Chat.Id, Message.MessageId);
             OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.Cancelled));
         }
 
@@ -97,30 +100,30 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         {
             if (!useKeyboard)
             {
-                await Bot.EditMessageTextAsync(chatId, messageId, text, cancellationToken: CTokenSource!.Token);
+                await Bot.EditMessageTextAsync(chatId, messageId, $"{Url}{Environment.NewLine}{text}", linkPreviewOptions: new LinkPreviewOptions { ShowAboveText = true }, cancellationToken: CTokenSource!.Token);
                 return;
             }
 
             if (keyboard != null)
             {
-                await Bot.EditMessageTextAsync(chatId, messageId, text, replyMarkup: keyboard, cancellationToken: CTokenSource!.Token);
+                await Bot.EditMessageTextAsync(chatId, messageId, $"{Url}{Environment.NewLine}{text}", linkPreviewOptions: new LinkPreviewOptions { ShowAboveText = true }, replyMarkup: keyboard, cancellationToken: CTokenSource!.Token);
                 return;
             }
 
-            await Bot.EditMessageTextAsync(chatId, messageId, text, replyMarkup: new InlineKeyboardMarkup().AddButton("Отмена"), cancellationToken: CTokenSource!.Token);
+            await Bot.EditMessageTextAsync(chatId, messageId, $"{Url}{Environment.NewLine}{text}", linkPreviewOptions: new LinkPreviewOptions { ShowAboveText = true }, replyMarkup: new InlineKeyboardMarkup().AddButton("Отмена"), cancellationToken: CTokenSource!.Token);
         }
 
         protected async Task<Message> SendMessageText(long chatId, string text, bool useKeyboard = true, InlineKeyboardMarkup? keyboard = null)
         {
-            if (!useKeyboard) return await Bot.SendTextMessageAsync(chatId, text, cancellationToken: CTokenSource!.Token);
-            if (keyboard != null) return await Bot.SendTextMessageAsync(chatId, text, replyMarkup: keyboard, cancellationToken: CTokenSource!.Token);
-            return await Bot.SendTextMessageAsync(chatId, text, replyMarkup: new InlineKeyboardMarkup().AddButton("Отмена"), cancellationToken: CTokenSource!.Token);
+            if (!useKeyboard) return await Bot.SendTextMessageAsync(chatId, $"{Url}{Environment.NewLine}{text}", linkPreviewOptions: new LinkPreviewOptions { ShowAboveText = true }, cancellationToken: CTokenSource!.Token);
+            if (keyboard != null) return await Bot.SendTextMessageAsync(chatId, $"{Url}{Environment.NewLine}{text}", linkPreviewOptions: new LinkPreviewOptions { ShowAboveText = true }, replyMarkup: keyboard, cancellationToken: CTokenSource!.Token);
+            return await Bot.SendTextMessageAsync(chatId, $"{Url}{Environment.NewLine}{text}", linkPreviewOptions: new LinkPreviewOptions { ShowAboveText = true }, replyMarkup: new InlineKeyboardMarkup().AddButton("Отмена"), cancellationToken: CTokenSource!.Token);
         }
 
         protected async Task ErrorNotification()
         {
             OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.Failed));
-            await EditMessageText(Message!.Chat.Id, Message.MessageId, "Что то пошло не так( попробуйте ещё раз.", false);
+            await EditMessageText(InitMessage.Chat.Id, InitMessage.MessageId, "Что то пошло не так( попробуйте ещё раз.", false);
         }
 
         protected async void ChangeDownloadProgress(DownloadProgress p)
@@ -128,7 +131,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             switch (p.State)
             {
                 case DownloadState.PostProcessing:
-                    await EditMessageText(Message!.Chat.Id, Message.MessageId, "Подготовка к загрузке...");
+                    await EditMessageText(InitMessage.Chat.Id, InitMessage.MessageId, "Подготовка к загрузке...");
                     return;
                 case DownloadState.Downloading:
                     try
@@ -144,7 +147,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
                             if (_progressQuoted) return;
                             _progressQuoted = true;
                             var unit = p.TotalDownloadSize.Replace(match.Value, "");
-                            await EditMessageText(Message!.Chat.Id, Message.MessageId,
+                            await EditMessageText(InitMessage.Chat.Id, InitMessage.MessageId,
                                 $"Скачано {Math.Round(p.Progress * result / 1f, 2)}{unit} из {result}{unit}. {totalPercent}%");
                         }
                         else

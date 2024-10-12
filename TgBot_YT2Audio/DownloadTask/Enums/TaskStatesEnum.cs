@@ -6,4 +6,5 @@ public enum TaskStatesEnum
     TypeSelected = 2,
     FormatSelected = 3,
     Downloading = 4,
+    Wait = 5,
 }

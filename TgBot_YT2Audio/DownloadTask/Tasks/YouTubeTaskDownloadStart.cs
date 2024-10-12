@@ -2,6 +2,7 @@
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
 using TgBot_YT2Audio.DownloadTask.Enums;
+using YoutubeDLSharp.Metadata;
 
 namespace TgBot_YT2Audio.DownloadTask.Tasks
 {
@@ -10,33 +11,45 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         public YouTubeTaskDownloadStart(Message initMessage, TelegramBotClient bot) : base(initMessage, bot)
         {
             TaskType = TaskTypesEnum.YouTubeTaskDownloadStart;
+            Url = InitMessage.Text!;
         }
+
+        private List<FormatData> _formats = [];
 
         public override async Task Start()
         {
             TaskState = TaskStatesEnum.Created;
-            if (Message == null)
-                Message = await SendMessageText(InitMessage.Chat.Id, "Что вы хотите скачать?", keyboard: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио").AddNewRow().AddButton("Отмена"));
-            else
-                await EditMessageText(Message!.Chat.Id, Message.MessageId, "Что вы хотите скачать?", keyboard: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио").AddNewRow().AddButton("Отмена"));
+            var messageId = InitMessage.MessageId;
+            InitMessage = await SendMessageText(InitMessage.Chat.Id, "Что вы хотите скачать?", keyboard: new InlineKeyboardMarkup().AddButtons("Видео", "Аудио").AddNewRow().AddButton("Отмена"));
+            await Bot.DeleteMessageAsync(InitMessage.Chat.Id, messageId, cancellationToken: CTokenSource!.Token);
         }
         protected override async Task TaskTypeChooseComplete(string? mes)
         {
             try
             {
-                switch (mes)
+                if (!string.IsNullOrEmpty(mes))
                 {
-                    case "Видео":
-                        await Bot.DeleteMessageAsync(Message!.Chat.Id, Message.MessageId, cancellationToken: CTokenSource!.Token);
-                        OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.YouTubeVideo));
-                        return;
-                    case "Аудио":
-                        await Bot.DeleteMessageAsync(Message!.Chat.Id, Message.MessageId, cancellationToken: CTokenSource!.Token);
-                        OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.YouTubeMusic));
-                        return;
-                    default:
-                        await ErrorNotification();
-                        return;
+                    switch (mes)
+                    {
+                        case "Видео":
+                            await EditMessageText(InitMessage.Chat.Id, InitMessage.MessageId,
+                                "Собираю информацию о видео...");
+                            var res = await YtDl.RunVideoDataFetch(Url, ct: CTokenSource!.Token);
+                            var result = Helpers.GetFormatList(res.Data.Formats.ToList());
+                            _formats = result.FormatList;
+                            Id = res.Data.ID;
+                            Title = res.Data.Title;
+                            await EditMessageText(InitMessage.Chat.Id, InitMessage.MessageId, "Выберите качество",
+                                keyboard: Helpers.GetKeyboard(result.FormatNames));
+                            TaskState = TaskStatesEnum.TypeSelected;
+                            return;
+                        case "Аудио":
+                            OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.YouTubeMusic));
+                            return;
+                        default:
+                            await ErrorNotification();
+                            return;
+                    }
                 }
             }
             catch (TaskCanceledException)
@@ -50,9 +63,26 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
             await ErrorNotification();
         }
 
-        protected override Task TaskQualityChooseComplete(string? mes)
+        protected override async Task TaskQualityChooseComplete(string? mes)
         {
-            return Task.CompletedTask;
+            try
+            {
+                if (!string.IsNullOrEmpty(mes))
+                {
+                    Format = _formats.Where(x => x.FormatNote == mes && x.Extension == "mp4").MaxBy(x => x.Bitrate); ;
+                    OnTaskComplete(new YouTubeTaskBaseEventArgs(InitMessage, Bot, TaskResultEnum.YouTubeVideo));
+                    return;
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                return;
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            await ErrorNotification();
         }
 
         protected override Task TaskFormatChooseComplete(string? mes)

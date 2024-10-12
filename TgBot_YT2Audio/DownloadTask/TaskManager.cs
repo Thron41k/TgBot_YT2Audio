@@ -45,7 +45,8 @@ namespace TgBot_YT2Audio.DownloadTask
 
         private void TaskComplete(object? sender, YouTubeTaskBase.YouTubeTaskBaseEventArgs e)
         {
-            if (sender is YouTubeTaskBase task)
+            var task = sender as YouTubeTaskBase;
+            if (task != null)
             {
                 task.TaskComplete -= TaskComplete;
                 _tasks.Remove(task,task.TaskType != TaskTypesEnum.YouTubeTaskDownloadStart);
@@ -54,14 +55,20 @@ namespace TgBot_YT2Audio.DownloadTask
             {
                 case TaskResultEnum.YouTubeMusic:
                     {
+                        var url = task?.Url;
                         task = new YouTubeTaskDownloadMusic(e.InitMessage, e.Bot);
+                        task.Url = url!;
                         task.TaskComplete += TaskComplete;
                         _tasks.Add(task);
                     }
                     break;
                 case TaskResultEnum.YouTubeVideo:
-                    {
+                {
+                        var format = task?.Format;
+                        var url = task?.Url;
                         task = new YouTubeTaskDownloadVideo(e.InitMessage, e.Bot);
+                        task.Format = format;
+                        task.Url = url!;
                         task.TaskComplete += TaskComplete;
                         _tasks.Add(task);
                     }

@@ -13,6 +13,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Telegram.Bot\src\Telegram.Bot\Telegram.Bot.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="libssl-3-x64.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

@@ -13,16 +13,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Telegram.Bot">
-      <HintPath>..\..\Thron41k\TgBot_YT2Audio\TgBot_YT2Audio\Telegram.Bot.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\..\Telegram.Bot\src\Telegram.Bot\Telegram.Bot.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Update="libssl-3-x64.dll">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Telegram.Bot.dll">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="token.json">

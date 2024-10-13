@@ -5,6 +5,8 @@ VisualStudioVersion = 17.11.35303.130
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TgBot_YT2Audio", "TgBot_YT2Audio\TgBot_YT2Audio.csproj", "{B7EFE729-E713-4418-B483-470DB4EDB20F}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Telegram.Bot", "..\Telegram.Bot\src\Telegram.Bot\Telegram.Bot.csproj", "{2A823778-CA4D-481A-8687-2ADD9C8E9C7A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{B7EFE729-E713-4418-B483-470DB4EDB20F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B7EFE729-E713-4418-B483-470DB4EDB20F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B7EFE729-E713-4418-B483-470DB4EDB20F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2A823778-CA4D-481A-8687-2ADD9C8E9C7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A823778-CA4D-481A-8687-2ADD9C8E9C7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A823778-CA4D-481A-8687-2ADD9C8E9C7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A823778-CA4D-481A-8687-2ADD9C8E9C7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

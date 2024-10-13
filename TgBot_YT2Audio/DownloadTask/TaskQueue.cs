@@ -32,9 +32,9 @@ namespace TgBot_YT2Audio.DownloadTask
 
         public Task<bool> Update(CallbackQuery query)
         {
-            var task = (_workingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null) ??
-                        _waitingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null)) ??
-                       _startedList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.From.Id), null);
+            var task = (_workingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.Message!.Chat.Id), null) ??
+                        _waitingList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.Message!.Chat.Id), null)) ??
+                       _startedList.FirstOrDefault(x => x!.Check(query.Message!.MessageId, query.Message!.Chat.Id), null);
             if (task == null) return Task.FromResult(false);
             new Task(() => _ = task.Update(query)).Start();
             return Task.FromResult(true);

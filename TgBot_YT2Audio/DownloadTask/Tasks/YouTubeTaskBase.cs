@@ -22,7 +22,7 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         public TaskTypesEnum TaskType = TaskTypesEnum.None;
         public FormatData? Format { get; set; }
         public string Url = url;
-        #region Complete Event
+
         public class YouTubeTaskBaseEventArgs(Message initMessage, TelegramBotClient bot, TaskResultEnum result) : EventArgs
         {
             public Message InitMessage { get; } = initMessage;
@@ -31,7 +31,6 @@ namespace TgBot_YT2Audio.DownloadTask.Tasks
         }
 
         public event EventHandler<YouTubeTaskBaseEventArgs>? TaskComplete;
-        #endregion
 
         public abstract Task Start();
 

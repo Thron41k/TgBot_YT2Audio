@@ -1,0 +1,6 @@
+[submodule "YoutubeDLSharp"]
+	path = YoutubeDLSharp
+	url = https://github.com/Bluegrams/YoutubeDLSharp.git
+[submodule "Telegram.Bot"]
+	path = Telegram.Bot
+	url = https://github.com/TelegramBots/Telegram.Bot.git

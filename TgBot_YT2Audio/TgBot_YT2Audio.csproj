@@ -9,8 +9,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Telegram.Bot\src\Telegram.Bot\Telegram.Bot.csproj" />
-    <ProjectReference Include="..\..\YoutubeDLSharp\YoutubeDLSharp\YoutubeDLSharp.csproj" />
+    <ProjectReference Include="..\Telegram.Bot\src\Telegram.Bot\Telegram.Bot.csproj" />
+    <ProjectReference Include="..\YoutubeDLSharp\YoutubeDLSharp\YoutubeDLSharp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

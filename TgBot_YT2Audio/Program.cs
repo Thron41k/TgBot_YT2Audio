@@ -13,6 +13,7 @@ Parser.Default.ParseArguments<StartArgsOptions>(args)
         if (!string.IsNullOrEmpty(o.Config))
         {
             Configuration.ConfigPath = o.Config;
+            Console.WriteLine($"Loading configuration file {o.Config}");
         }
         daemon = o.Daemon;
     });

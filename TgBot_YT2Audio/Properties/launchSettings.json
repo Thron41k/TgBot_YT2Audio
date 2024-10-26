@@ -2,7 +2,7 @@
   "profiles": {
     "TgBot_YT2Audio": {
       "commandName": "Project",
-      "commandLineArgs": "-c config.json -d"
+      "commandLineArgs": "-c D:\\Dev\\TGBot\\TgBot_YT2Audio.config.json -d"
     }
   }
 }

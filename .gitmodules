@@ -4,3 +4,6 @@
 [submodule "Telegram.Bot"]
 	path = Telegram.Bot
 	url = https://github.com/TelegramBots/Telegram.Bot.git
+[submodule "commandline"]
+	path = commandline
+	url = https://github.com/commandlineparser/commandline.git

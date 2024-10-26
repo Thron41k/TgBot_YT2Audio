@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Telegram.Bot", "Telegram.Bo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YoutubeDLSharp", "YoutubeDLSharp\YoutubeDLSharp\YoutubeDLSharp.csproj", "{EBFE8E8B-3768-494A-B2A5-6C75B2185FFC}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommandLine", "commandline\src\CommandLine\CommandLine.csproj", "{A6E1405E-1C6C-43D1-BF1C-DD3A102026D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{EBFE8E8B-3768-494A-B2A5-6C75B2185FFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EBFE8E8B-3768-494A-B2A5-6C75B2185FFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EBFE8E8B-3768-494A-B2A5-6C75B2185FFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A6E1405E-1C6C-43D1-BF1C-DD3A102026D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6E1405E-1C6C-43D1-BF1C-DD3A102026D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6E1405E-1C6C-43D1-BF1C-DD3A102026D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6E1405E-1C6C-43D1-BF1C-DD3A102026D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

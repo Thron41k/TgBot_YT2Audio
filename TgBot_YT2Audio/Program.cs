@@ -1,12 +1,22 @@
-﻿using Telegram.Bot;
+﻿using CommandLine;
+using Telegram.Bot;
 using Telegram.Bot.Types.Enums;
 using TgBot_YT2Audio;
 using TgBot_YT2Audio.DownloadTask;
 
-if (args.Length > 0) {
-    Configuration.ConfigPath = args[0];
-    Configuration.Load();
-}
+
+
+var daemon = false;
+Parser.Default.ParseArguments<StartArgsOptions>(args)
+    .WithParsed(o =>
+    {
+        if (!string.IsNullOrEmpty(o.Config))
+        {
+            Configuration.ConfigPath = o.Config;
+        }
+        daemon = o.Daemon;
+    });
+Configuration.Load();
 using var cts = new CancellationTokenSource();
 var tgOptions = new TelegramBotClientOptions(Configuration.GetInstance()?.BotApiToken!, baseUrl: Configuration.GetInstance()?.LocalApiServer);
 var bot = new TelegramBotClient(cancellationToken: cts.Token, options: tgOptions);
@@ -14,6 +24,7 @@ Console.WriteLine($"Local server {bot.LocalBotServer}");
 bot.Timeout = new TimeSpan(0, 1, 0, 0);
 var user = await bot.GetMeAsync();
 var taskManager = new TaskManager();
+
 bot.OnMessage += (message, type) =>
 {
     try
@@ -29,6 +40,7 @@ bot.OnMessage += (message, type) =>
     }
     return Task.CompletedTask;
 };
+
 bot.OnUpdate += async update =>
 {
     try
@@ -47,7 +59,17 @@ bot.OnUpdate += async update =>
         Console.WriteLine(ex);
     }
 };
-Console.WriteLine($"@{user.Username} запущен... Нажмите любую клавишу для выхода.");
-Console.ReadLine();
-cts.Cancel();
+
+if (daemon)
+{
+    Console.WriteLine($"@{user.Username} runed in daemon mode.");
+    await Task.Delay(-1);
+}
+else
+{
+    Console.WriteLine($"@{user.Username} runed... Press any key for exit.");
+    Console.ReadKey();
+    cts.Cancel();
+}
+
 

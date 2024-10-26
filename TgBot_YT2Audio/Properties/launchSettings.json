@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TgBot_YT2Audio": {
+      "commandName": "Project",
+      "commandLineArgs": "config.json"
+    }
+  }
+}

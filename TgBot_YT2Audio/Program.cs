@@ -3,9 +3,12 @@ using Telegram.Bot.Types.Enums;
 using TgBot_YT2Audio;
 using TgBot_YT2Audio.DownloadTask;
 
-if (args.Length > 0) Configuration.ConfigPath = args[0];
+if (args.Length > 0) {
+    Configuration.ConfigPath = args[0];
+    Configuration.Load();
+}
 using var cts = new CancellationTokenSource();
-var tgOptions = new TelegramBotClientOptions(Configuration.GetInstance().BotApiToken!, baseUrl: Configuration.GetInstance().LocalApiServer);
+var tgOptions = new TelegramBotClientOptions(Configuration.GetInstance()?.BotApiToken!, baseUrl: Configuration.GetInstance()?.LocalApiServer);
 var bot = new TelegramBotClient(cancellationToken: cts.Token, options: tgOptions);
 Console.WriteLine($"Local server {bot.LocalBotServer}");
 bot.Timeout = new TimeSpan(0, 1, 0, 0);

@@ -5,7 +5,7 @@ namespace TgBot_YT2Audio;
 
 public class Configuration
 {
-    [JsonIgnore] public static string ConfigPath { get; set; } = "config1.json";
+    [JsonIgnore] public static string ConfigPath { get; set; } = "config.json";
     public string? OutputFolder { get; }
     public string? YoutubeDlPath { get; }
     public string? FFmpegPath { get; }
@@ -62,7 +62,11 @@ public class Configuration
             }
             using var fs = new FileStream(ConfigPath, FileMode.Open);
             var config = JsonSerializer.Deserialize<Configuration>(fs);
-            if (config != null && config.IsValid()) _instance =  config;
+            if (config != null && config.IsValid())
+            {
+                _instance =  config;
+                return;
+            }
             throw new FileLoadException("config is invalid");
         }
         catch (Exception e)
